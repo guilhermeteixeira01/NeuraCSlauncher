@@ -18,7 +18,7 @@
 const { exec } = require('child_process');
 
 const POLL_INTERVAL_MS = 2000;
-const LAUNCH_TIMEOUT_MS = 45000; // tempo máx esperando o processo aparecer
+const LAUNCH_TIMEOUT_MS = 120000; // 2 minutos — Steam pode demorar pra validar/abrir na 1ª vez
 
 let pollHandle = null;
 let isRunning = false;
@@ -30,7 +30,10 @@ function isProcessRunning(processName) {
 
     if (process.platform === 'win32') {
       exec(`tasklist /FI "IMAGENAME eq ${processName}" /NH`, (err, stdout) => {
-        if (err) return resolve(false);
+        if (err) {
+          console.warn('[GameWatcher] tasklist falhou:', err.message);
+          return resolve(false);
+        }
         resolve(stdout.toLowerCase().includes(processName.toLowerCase()));
       });
     } else {
@@ -48,6 +51,8 @@ function isProcessRunning(processName) {
 function start(processName, { onRunning, onClosed }) {
   stop(); // garante que não fica mais de um watcher ativo ao mesmo tempo
 
+  console.log(`[GameWatcher] Observando processo "${processName}"...`);
+
   isRunning = false;
   waitedMs = 0;
 
@@ -55,17 +60,22 @@ function start(processName, { onRunning, onClosed }) {
     const running = await isProcessRunning(processName);
 
     if (running && !isRunning) {
+      console.log(`[GameWatcher] "${processName}" detectado rodando.`);
       isRunning = true;
       waitedMs = 0;
       onRunning();
     } else if (!running && isRunning) {
+      console.log(`[GameWatcher] "${processName}" não está mais rodando — jogo fechado.`);
       isRunning = false;
       stop();
       onClosed();
     } else if (!running && !isRunning) {
       waitedMs += POLL_INTERVAL_MS;
       if (waitedMs >= LAUNCH_TIMEOUT_MS) {
-        console.log('[GameWatcher] Processo não detectado a tempo, parei de verificar.');
+        console.log(
+          `[GameWatcher] "${processName}" não apareceu em ${LAUNCH_TIMEOUT_MS / 1000}s, parei de verificar. ` +
+          'Se o jogo realmente abriu, o nome do processo pode ser diferente do esperado.'
+        );
         stop();
       }
     }

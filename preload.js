@@ -14,5 +14,13 @@ contextBridge.exposeInMainWorld('api', {
 
   onGameDetected: (callback) => ipcRenderer.on('game-detected', (_event, data) => callback(data)),
 
-  onGameStatus: (callback) => ipcRenderer.on('game-status', (_event, data) => callback(data))
+  onGameStatus: (callback) => ipcRenderer.on('game-status', (_event, data) => callback(data)),
+
+  // Opções de inicialização: escolher um executável manualmente,
+  // esquecer o que foi escolhido, e abrir links externos (Steam / outro
+  // link configurado em launch-config.js) quando nenhum jogo é encontrado.
+  browseGameExecutable: () => ipcRenderer.invoke('browse-game-executable'),
+  clearGameExecutable: () => ipcRenderer.send('clear-game-executable'),
+  openExternalLink: (url) => ipcRenderer.send('open-external-link', url)
 });
+

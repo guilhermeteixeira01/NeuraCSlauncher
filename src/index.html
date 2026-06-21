@@ -225,14 +225,32 @@
                 </svg>
               </span>
             </button>
-            <button id="btn-options" class="btn-options">
-              <span id="launch-option-text">VERIFICANDO INSTALAÇÃO...</span>
-              <span class="chevron">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M6 9l6 6 6-6"/>
-                </svg>
-              </span>
-            </button>
+            <div class="launch-options" id="launch-options">
+              <!-- Detectado (Steam ou manual): botão com dropdown pra trocar o executável
+                   (o conteúdo do dropdown em si vive fora da .hero — ver launch-options-menu
+                   perto do final do body — porque a .hero tem overflow:hidden e cortaria ele) -->
+              <button id="btn-options" class="btn-options hidden">
+                <span id="launch-option-text">VERIFICANDO INSTALAÇÃO...</span>
+                <span class="chevron">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </span>
+              </button>
+
+              <!-- Não detectado: painel sempre visível, sem precisar abrir nada -->
+              <div id="no-game-panel" class="no-game-panel hidden">
+                <p class="lom-hint">Nenhuma instalação encontrada.</p>
+                <div class="no-game-actions">
+                  <button id="lom-browse" class="lom-item lom-item-primary">Selecionar executável...</button>
+                  <a id="lom-link-steam" class="lom-item lom-link" href="#">Baixar na Steam ↗</a>
+                  <a id="lom-link-secondary" class="lom-item lom-link hidden" href="#"></a>
+                </div>
+              </div>
+            </div>
+
+
+
           </div>
         </div>
       </section>
@@ -492,6 +510,15 @@
       </div>
 
     </aside>
+  </div>
+
+  <!-- Dropdown de "escolher outro executável" — fica fora da .hero de propósito
+       (a .hero tem overflow:hidden + altura fixa pra cortar a imagem de fundo,
+       o que cortaria esse menu também). A posição é calculada via JS no
+       renderer.js a partir do botão #btn-options, então funciona como um
+       menu "flutuante" de verdade, por cima de qualquer seção da página. -->
+  <div id="launch-options-menu" class="launch-options-menu hidden">
+    <button id="lom-change-path" class="lom-item">Escolher outro executável...</button>
   </div>
 
   <!-- Launch overlay -->

@@ -1,11 +1,15 @@
-const { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage, dialog } = require('electron');
+const fs = require('fs');
 const path = require('path');
 const discordRPC = require('./discord-rpc');
 const autoUpdate = require('./auto-update');
 const steamDetect = require('./steam-detect');
 const gameWatcher = require('./game-watcher');
+const launchConfig = require('./launch-config');
 
-// Guarda o resultado da detecção do CS 1.6 pra usar depois, no clique de "JOGAR"
+// Guarda o resultado da detecção do CS 1.6 pra usar depois, no clique de "JOGAR".
+// "source" indica de onde veio: 'steam' (detecção automática) ou 'manual'
+// (executável escolhido pelo usuário nas opções de inicialização).
 let cs16Info = { detected: false };
 let tray = null;
 
@@ -21,6 +25,40 @@ if (!app.isPackaged) {
   } catch (err) {
     console.warn('[LiveReload] electron-reload não encontrado, rode "npm install" novamente.');
   }
+}
+
+// Combina a detecção automática da Steam com um caminho manual que o
+// usuário possa ter configurado nas opções de inicialização. A Steam
+// continua tendo prioridade quando os dois existem (é a fonte mais
+// confiável); o manual só entra em ação se a Steam não achou nada.
+function resolveCs16Info() {
+  const steamResult = steamDetect.detectCS16();
+  if (steamResult.detected) {
+    return { ...steamResult, source: 'steam' };
+  }
+
+  const manualPath = launchConfig.getCustomGamePath();
+  if (manualPath && fs.existsSync(manualPath)) {
+    return {
+      detected: true,
+      source: 'manual',
+      exePath: manualPath,
+      installPath: path.dirname(manualPath)
+    };
+  }
+  if (manualPath && !fs.existsSync(manualPath)) {
+    // O arquivo que o usuário escolheu não existe mais (foi movido/apagado) —
+    // limpa a config pra não ficar reportando um caminho morto.
+    launchConfig.clearCustomGamePath();
+  }
+
+  return { detected: false, reason: steamResult.reason || 'app-not-installed' };
+}
+
+function refreshAndBroadcastDetection() {
+  cs16Info = resolveCs16Info();
+  sendToRenderer('game-detected', { ...cs16Info, links: launchConfig.getLinks() });
+  return cs16Info;
 }
 
 let mainWindow;
@@ -105,6 +143,7 @@ function showMainWindow() {
 }
 
 app.whenReady().then(() => {
+  launchConfig.init(app);
   createWindow();
   createTray();
   discordRPC.connect();
@@ -112,15 +151,17 @@ app.whenReady().then(() => {
   autoUpdate.init(mainWindow);
   autoUpdate.checkForUpdates();
 
-  // Detecta se o CS 1.6 já está instalado via Steam nesta máquina.
-  // Roda só uma vez no boot — se o usuário instalar o jogo com o
-  // launcher já aberto, ele precisa reabrir pra detectar (suficiente
-  // pro caso de uso atual).
-  cs16Info = steamDetect.detectCS16();
+  // Detecta se o CS 1.6 já está instalado: primeiro via Steam
+  // (automático), e se não achar, olha se existe um caminho manual
+  // configurado pelo usuário nas opções de inicialização.
+  // Roda só uma vez no boot — se o usuário instalar o jogo ou escolher
+  // um executável com o launcher já aberto, a tela de opções já
+  // atualiza na hora (não depende de reiniciar o app).
+  cs16Info = resolveCs16Info();
   if (cs16Info.detected) {
-    console.log('[SteamDetect] CS 1.6 encontrado em:', cs16Info.installPath);
+    console.log(`[Detect] CS 1.6 encontrado (${cs16Info.source}):`, cs16Info.installPath || cs16Info.exePath);
   } else {
-    console.log('[SteamDetect] CS 1.6 não encontrado:', cs16Info.reason);
+    console.log('[Detect] CS 1.6 não encontrado:', cs16Info.reason);
   }
 
   mainWindow.webContents.once('did-finish-load', () => {
@@ -128,7 +169,7 @@ app.whenReady().then(() => {
     // estado "verificando..." nem pisca na tela — fica mais claro pro
     // usuário que o launcher de fato checou a instalação.
     setTimeout(() => {
-      mainWindow.webContents.send('game-detected', cs16Info);
+      mainWindow.webContents.send('game-detected', { ...cs16Info, links: launchConfig.getLinks() });
     }, 1200);
   });
 });
@@ -172,14 +213,34 @@ ipcMain.on('update-install', () => {
   autoUpdate.quitAndInstall();
 });
 
-// "Play": se o CS 1.6 foi detectado, abre o jogo de verdade através da
-// Steam (steam://rungameid/10) — é a própria Steam que cuida do processo,
-// então o launcher só fica "por cima" mostrando o overlay de carregamento.
-// Se não foi detectado, mantém a simulação (ex.: pra outros jogos/mods).
+// "Play": o comportamento muda de acordo com a fonte detectada em cs16Info.source:
+// - 'steam'  -> abre via protocolo steam://rungameid/10 (a própria Steam cuida do processo)
+// - 'manual' -> roda direto o executável que o usuário escolheu nas opções
+// - nenhum   -> mantém a simulação (ex.: pra outros jogos/mods futuros)
 ipcMain.on('launch-game', (event) => {
   event.reply('launch-status', { status: 'launching' });
 
-  if (cs16Info.detected) {
+  if (cs16Info.detected && cs16Info.source === 'manual') {
+    console.log('Lançando executável configurado manualmente:', cs16Info.exePath);
+    const { spawn } = require('child_process');
+    try {
+      const child = spawn(cs16Info.exePath, [], {
+        cwd: path.dirname(cs16Info.exePath),
+        detached: true,
+        stdio: 'ignore'
+      });
+      child.unref();
+    } catch (err) {
+      console.error('[Launch] Erro ao iniciar executável manual:', err);
+    }
+
+    startWatchingGameProcess(path.basename(cs16Info.exePath));
+
+    setTimeout(() => {
+      event.reply('launch-status', { status: 'launched' });
+      minimizeToBackground();
+    }, 1500);
+  } else if (cs16Info.detected) {
     console.log('Lançando Counter-Strike 1.6 via Steam...');
     shell.openExternal(`steam://rungameid/${steamDetect.CS16_APPID}`).catch((err) => {
       console.error('[SteamDetect] Erro ao abrir via Steam:', err);
@@ -192,19 +253,7 @@ ipcMain.on('launch-game', (event) => {
       ? path.basename(cs16Info.exePath)
       : (process.platform === 'win32' ? 'hl.exe' : 'hl');
 
-    gameWatcher.start(processName, {
-      onRunning: () => {
-        console.log('[GameWatcher] Counter-Strike 1.6 está rodando.');
-        sendToRenderer('game-status', { status: 'running' });
-        discordRPC.setPlayingActivity();
-      },
-      onClosed: () => {
-        console.log('[GameWatcher] Counter-Strike 1.6 foi fechado.');
-        sendToRenderer('game-status', { status: 'closed' });
-        updateDiscordToIdle();
-        showMainWindow(); // traz o launcher de volta pra frente
-      }
-    });
+    startWatchingGameProcess(processName);
 
     setTimeout(() => {
       event.reply('launch-status', { status: 'launched' });
@@ -223,25 +272,101 @@ ipcMain.on('launch-game', (event) => {
   }
 });
 
+function startWatchingGameProcess(processName) {
+  gameWatcher.start(processName, {
+    onRunning: () => {
+      console.log('[GameWatcher] Counter-Strike 1.6 está rodando.');
+      sendToRenderer('game-status', { status: 'running' });
+      discordRPC.setPlayingActivity();
+    },
+    onClosed: () => {
+      console.log('[GameWatcher] Counter-Strike 1.6 foi fechado.');
+      sendToRenderer('game-status', { status: 'closed' });
+      updateDiscordToIdle();
+      showMainWindow(); // traz o launcher de volta pra frente
+    }
+  });
+}
+
+// Abre o diálogo nativo de "escolher arquivo" pra o usuário apontar um
+// executável do jogo (qualquer instalação que a detecção automática da
+// Steam não tenha encontrado). Salva o caminho escolhido e refaz a
+// detecção, avisando a tela de opções do novo estado.
+ipcMain.handle('browse-game-executable', async () => {
+  const filters = process.platform === 'win32'
+    ? [{ name: 'Executável', extensions: ['exe'] }]
+    : [{ name: 'Executável', extensions: ['*'] }];
+
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Selecione o executável do jogo',
+    properties: ['openFile'],
+    filters
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return { canceled: true };
+  }
+
+  const chosenPath = result.filePaths[0];
+  launchConfig.setCustomGamePath(chosenPath);
+  const updated = refreshAndBroadcastDetection();
+  return { canceled: false, path: chosenPath, info: updated };
+});
+
+// Esquece o caminho manual configurado (ex.: usuário quer escolher outro,
+// ou voltar a depender só da detecção automática da Steam).
+ipcMain.on('clear-game-executable', () => {
+  launchConfig.clearCustomGamePath();
+  refreshAndBroadcastDetection();
+});
+
+// Abre links externos (Steam, ou um segundo link configurado em
+// launch-config.js) no navegador padrão do sistema.
+ipcMain.on('open-external-link', (event, url) => {
+  const allowed = Object.values(launchConfig.getLinks()).filter(Boolean);
+  if (!allowed.includes(url)) {
+    console.warn('[Links] Tentativa de abrir URL fora da lista permitida, ignorada:', url);
+    return;
+  }
+  shell.openExternal(url).catch((err) => {
+    console.error('[Links] Erro ao abrir link externo:', err);
+  });
+});
+
 function sendToRenderer(channel, payload) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send(channel, payload);
   }
 }
 
-// Volta o Rich Presence do Discord pro estado normal (fora de jogo).
-// discord-rpc.js precisa expor setIdleActivity() ou clearActivity() pra
-// isso funcionar de fato — se nenhuma das duas existir, só avisa no log.
+// Volta o Rich Presence do Discord pro estado normal (fora de jogo) —
+// mesmo status de "No menu principal" que ele mostra logo que conecta.
+// Prioriza setMenuActivity() (já existe no seu discord-rpc.js); se um dia
+// esse arquivo mudar e ela não existir mais, cai pra clearActivity() e,
+// por último, reconecta o client (sessão nova nasce sem activity nenhuma).
 function updateDiscordToIdle() {
+  if (typeof discordRPC.setMenuActivity === 'function') {
+    discordRPC.setMenuActivity();
+    return;
+  }
   if (typeof discordRPC.setIdleActivity === 'function') {
     discordRPC.setIdleActivity();
-  } else if (typeof discordRPC.clearActivity === 'function') {
+    return;
+  }
+  if (typeof discordRPC.clearActivity === 'function') {
     discordRPC.clearActivity();
-  } else {
-    console.warn(
-      '[DiscordRPC] discord-rpc.js não tem setIdleActivity() nem clearActivity() — ' +
-      'adicione uma dessas funções lá pra atualizar o rich presence quando o jogo fechar.'
-    );
+    return;
+  }
+
+  console.warn(
+    '[DiscordRPC] discord-rpc.js não tem setMenuActivity()/setIdleActivity()/clearActivity() — ' +
+    'usando fallback de reconexão.'
+  );
+  try {
+    discordRPC.destroy();
+    discordRPC.connect();
+  } catch (err) {
+    console.error('[DiscordRPC] Fallback de reconexão falhou:', err);
   }
 }
 

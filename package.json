@@ -1,6 +1,6 @@
 {
   "name": "neuracs-launcher",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Launcher CS",
   "main": "main.js",
   "scripts": {
@@ -27,7 +27,7 @@
   },
   "build": {
     "appId": "com.neuracs.launcher",
-    "productName": "neuracs Launcher",
+    "productName": "Neura Cs Launcher",
     "files": [
       "main.js",
       "preload.js",
@@ -35,6 +35,7 @@
       "auto-update.js",
       "steam-detect.js",
       "game-watcher.js",
+      "launch-config.js",
       "src/**/*",
       "node_modules/**/*"
     ],

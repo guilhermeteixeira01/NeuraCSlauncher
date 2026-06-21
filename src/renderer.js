@@ -26,8 +26,20 @@ const launchText = document.getElementById('launch-text');
 const btnPlay = document.getElementById('btn-play');
 const btnPlayLabel = document.getElementById('btn-play-label');
 const btnPlayArrow = document.getElementById('btn-play-arrow');
+
+// Opções de inicialização — dois "modos" de exibição:
+// 1) detectado (Steam ou caminho manual): botão com dropdown pra trocar
+// 2) não detectado: painel fixo, sempre visível, com botão de seleção
+//    manual e os links de download
 const btnOptions = document.getElementById('btn-options');
 const launchOptionText = document.getElementById('launch-option-text');
+const optionsMenu = document.getElementById('launch-options-menu');
+const lomChangePath = document.getElementById('lom-change-path');
+
+const noGamePanel = document.getElementById('no-game-panel');
+const lomBrowse = document.getElementById('lom-browse');
+const lomLinkSteam = document.getElementById('lom-link-steam');
+const lomLinkSecondary = document.getElementById('lom-link-secondary');
 
 btnPlay.addEventListener('click', () => {
   if (btnPlay.disabled) return; // ainda verificando a instalação
@@ -45,11 +57,63 @@ window.api.onLaunchStatus((data) => {
   }
 });
 
-// ===== Detecção automática do CS 1.6 instalado via Steam =====
+// Abre/fecha o dropdown (só existe quando o jogo está detectado).
+// O menu vive fora da .hero (que tem overflow:hidden + altura fixa),
+// então a posição é calculada na mão a partir do botão, toda vez que abre.
+function positionOptionsMenu() {
+  const rect = btnOptions.getBoundingClientRect();
+  optionsMenu.style.left = rect.left + 'px';
+  optionsMenu.style.top = (rect.bottom + 6) + 'px';
+  optionsMenu.style.width = rect.width + 'px';
+}
+
+btnOptions.addEventListener('click', (e) => {
+  e.preventDefault();
+  const opening = optionsMenu.classList.contains('hidden');
+  if (opening) positionOptionsMenu();
+  optionsMenu.classList.toggle('hidden');
+});
+document.addEventListener('click', (e) => {
+  if (!optionsMenu.classList.contains('hidden') &&
+      !optionsMenu.contains(e.target) && e.target !== btnOptions && !btnOptions.contains(e.target)) {
+    optionsMenu.classList.add('hidden');
+  }
+});
+// Reposiciona (ou fecha) se a janela for redimensionada/maximizada
+// enquanto o menu estiver aberto, pra não ficar desalinhado.
+window.addEventListener('resize', () => {
+  if (!optionsMenu.classList.contains('hidden')) positionOptionsMenu();
+});
+
+// "Escolher outro executável" (quando já tem algo detectado) e
+// "Selecionar executável" (quando nada foi detectado) levam ao mesmo
+// diálogo nativo de arquivo, no main process.
+async function browseForExecutable() {
+  const result = await window.api.browseGameExecutable();
+  if (result && result.canceled) return;
+  optionsMenu.classList.add('hidden');
+  // onGameDetected é disparado pelo main process com o novo estado —
+  // não precisa atualizar nada manualmente aqui.
+}
+lomChangePath.addEventListener('click', browseForExecutable);
+lomBrowse.addEventListener('click', browseForExecutable);
+
+// Links de download (Steam / link secundário opcional) — abrem no
+// navegador padrão via main process, que valida a URL antes de abrir.
+lomLinkSteam.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (lomLinkSteam.dataset.url) window.api.openExternalLink(lomLinkSteam.dataset.url);
+});
+lomLinkSecondary.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (lomLinkSecondary.dataset.url) window.api.openExternalLink(lomLinkSecondary.dataset.url);
+});
+
+// ===== Detecção automática (Steam ou caminho manual) do CS 1.6 =====
 // Enquanto a checagem roda (lá no main process), o botão fica em estado
 // "verificando" — desabilitado, com spinner e texto cinza. Quando o
-// resultado chega, ele libera: verde se achou o jogo, laranja padrão
-// se não achou (e a opção de inicialização avisa o que foi detectado).
+// resultado chega, ele libera: verde se achou o jogo (qualquer fonte),
+// ou mostra o painel de "nenhuma instalação encontrada" caso contrário.
 window.api.onGameDetected((data) => {
   btnPlay.disabled = false;
   btnPlay.classList.remove('is-checking');
@@ -58,19 +122,41 @@ window.api.onGameDetected((data) => {
 
   if (data.detected) {
     btnPlay.classList.add('steam-ready');
+    btnOptions.classList.remove('hidden');
     btnOptions.classList.add('steam-selected');
-    launchOptionText.textContent = 'STEAM — COUNTER-STRIKE 1.6 DETECTADO';
+    noGamePanel.classList.add('hidden');
+
+    launchOptionText.textContent = data.source === 'manual'
+      ? 'EXECUTÁVEL CONFIGURADO MANUALMENTE'
+      : 'STEAM — COUNTER-STRIKE 1.6 DETECTADO';
   } else {
     btnPlay.classList.remove('steam-ready');
+    btnOptions.classList.add('hidden');
     btnOptions.classList.remove('steam-selected');
-    launchOptionText.textContent = 'OPÇÕES DE INICIALIZAÇÃO';
+    optionsMenu.classList.add('hidden');
+    noGamePanel.classList.remove('hidden');
+
+    const links = data.links || {};
+    if (links.steam) {
+      lomLinkSteam.dataset.url = links.steam;
+      lomLinkSteam.classList.remove('hidden');
+    } else {
+      lomLinkSteam.classList.add('hidden');
+    }
+    if (links.secondary) {
+      lomLinkSecondary.dataset.url = links.secondary;
+      lomLinkSecondary.textContent = 'Outro link ↗';
+      lomLinkSecondary.classList.remove('hidden');
+    } else {
+      lomLinkSecondary.classList.add('hidden');
+    }
   }
 });
 
 // ===== Jogo abriu / fechou (observado de verdade pelo main process) =====
 // Enquanto o jogo está rodando, o botão fica num terceiro estado: travado,
 // com uma bolinha pulsando e texto "JOGANDO". Quando o jogo fecha, volta
-// pro estado normal (verde, já que sabemos que o CS 1.6 está instalado).
+// pro estado normal (verde, já que sabemos que o jogo está instalado).
 window.api.onGameStatus((data) => {
   if (data.status === 'running') {
     btnPlay.disabled = true;
@@ -78,7 +164,7 @@ window.api.onGameStatus((data) => {
     btnPlay.classList.add('in-game');
     btnPlayArrow.classList.add('hidden-arrow');
     btnPlayLabel.textContent = 'JOGANDO';
-    launchOptionText.textContent = 'STEAM — JOGO EM EXECUÇÃO';
+    launchOptionText.textContent = 'JOGO EM EXECUÇÃO';
   } else if (data.status === 'closed') {
     btnPlay.disabled = false;
     btnPlay.classList.remove('in-game');
