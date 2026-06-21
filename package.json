@@ -26,8 +26,8 @@
     "electron-updater": "^6.3.0"
   },
   "build": {
-    "appId": "com.vanguard.launcher",
-    "productName": "Vanguard Launcher",
+    "appId": "com.neuracs.launcher",
+    "productName": "neuracs Launcher",
     "files": [
       "main.js",
       "preload.js",
