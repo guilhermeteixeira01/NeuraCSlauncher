@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Neura CS Launcher</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="window-frame" class="window-frame">
+
+  <!-- Botões da janela flutuando sobre o conteúdo (sem barra de título) -->
+  <div class="window-controls window-controls--floating">
+    <button id="btn-min" class="win-btn" title="Minimizar">
+      <svg viewBox="0 0 10 10" width="10" height="10" fill="none">
+        <path d="M1 5H9" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button id="btn-max" class="win-btn" title="Maximizar">
+      <svg class="icon-maximize" viewBox="0 0 10 10" width="10" height="10" fill="none">
+        <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.1"/>
+      </svg>
+      <svg class="icon-restore" viewBox="0 0 10 10" width="10" height="10" fill="none" style="display:none">
+        <rect x="1" y="2.7" width="6.3" height="6.3" rx="1" stroke="currentColor" stroke-width="1.1"/>
+        <path d="M3.2 2.7V1.7C3.2 1.31 3.51 1 3.9 1H8.3C8.69 1 9 1.31 9 1.7V6.1C9 6.49 8.69 6.8 8.3 6.8H7.3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button id="btn-close" class="win-btn win-btn--close" title="Fechar">
+      <svg viewBox="0 0 10 10" width="10" height="10" fill="none">
+        <path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Update notification bar -->
+  <div id="update-bar" class="update-bar hidden">
+    <span id="update-text">Verificando atualizações...</span>
+    <div id="update-progress-wrap" class="update-progress-wrap hidden">
+      <div id="update-progress" class="update-progress"></div>
+    </div>
+    <button id="btn-update-install" class="btn-update-install hidden">REINICIAR E ATUALIZAR</button>
+  </div>
+
+  <div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="logo.png" class="logo">
+      </div>
+
+      <nav class="nav">
+
+        <!-- INÍCIO -->
+        <a href="#" class="nav-item active" data-view="inicio">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z"/>
+            </svg>
+          </span> INÍCIO
+        </a>
+      
+        <!-- NOTÍCIAS -->
+        <a href="#" class="nav-item" data-view="noticias">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="7" y1="8" x2="17" y2="8"/>
+              <line x1="7" y1="12" x2="17" y2="12"/>
+              <line x1="7" y1="16" x2="13" y2="16"/>
+            </svg>
+          </span> NOTÍCIAS
+        </a>
+      
+        <!-- CONFIGURAÇÕES -->
+        <!-- <a href="#" class="nav-item" data-view="config">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 2L13.5 5.5L17 4L17.5 7.5L21 8L19 11L21 14L17.5 14.5L17 18L13.5 16.5L12 20L10.5 16.5L7 18L6.5 14.5L3 14L5 11L3 8L6.5 7.5L7 4L10.5 5.5Z"/>
+            </svg>
+          </span> CONFIGURAÇÕES
+        </a> -->
+      
+        <!-- MODS -->
+        <!-- <a href="#" class="nav-item" data-view="mods">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7V17L12 22L22 17V7Z"/>
+              <path d="M2 7L12 12L22 7"/>
+              <line x1="12" y1="12" x2="12" y2="22"/>
+            </svg>
+          </span> MODS
+        </a> -->
+      
+        <!-- RANKING -->
+        <!-- <a href="#" class="nav-item" data-view="ranking">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L15 9H22L16.5 13.5L18.5 21L12 17L5.5 21L7.5 13.5L2 9H9Z"/>
+            </svg>
+          </span> RANKING
+        </a> -->
+      
+        <!-- REPLAYS -->
+        <!-- <a href="#" class="nav-item" data-view="replays">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+            </svg>
+          </span> REPLAYS
+        </a> -->
+      
+        <!-- SERVIDORES -->
+        <a href="#" class="nav-item" data-view="servidores">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="5" rx="1"/>
+              <rect x="2" y="10" width="20" height="5" rx="1"/>
+              <rect x="2" y="17" width="20" height="5" rx="1"/>
+              <circle cx="18" cy="5.5" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="18" cy="12.5" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="18" cy="19.5" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+          </span> SERVIDORES
+        </a>
+      
+        <!-- LOJA -->
+        <a href="#" class="nav-item" data-view="loja">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2L3 6V20C3 21.1 3.9 22 5 22H19C20.1 22 21 21.1 21 20V6L18 2H6Z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10C16 12.2 14.2 14 12 14C9.8 14 8 12.2 8 10"/>
+            </svg>
+          </span> LOJA
+        </a>
+      
+        <!-- SUPORTE -->
+        <!-- <a href="#" class="nav-item" data-view="suporte">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9 9C9 7.3 10.3 6 12 6C13.7 6 15 7.3 15 9C15 11 12 12 12 12"/>
+              <circle cx="12" cy="16" r="0.5" fill="currentColor"/>
+            </svg>
+          </span> SUPORTE
+        </a> -->
+      
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="social-links">
+          <a href="#" class="social-link" title="Discord">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.317 4.492c-1.53-.69-3.17-1.2-4.885-1.49a.075.075 0 0 0-.079.036c-.21.369-.444.85-.608 1.23a18.566 18.566 0 0 0-5.487 0 12.36 12.36 0 0 0-.617-1.23A.077.077 0 0 0 8.562 3c-1.714.29-3.354.8-4.885 1.491a.07.07 0 0 0-.032.027C.533 9.093-.32 13.555.099 17.961a.08.08 0 0 0 .031.055 20.03 20.03 0 0 0 5.993 2.98.078.078 0 0 0 .084-.026c.462-.62.874-1.275 1.226-1.963a.075.075 0 0 0-.041-.104 13.201 13.201 0 0 1-1.872-.878.075.075 0 0 1-.008-.125c.126-.093.252-.19.372-.287a.075.075 0 0 1 .078-.01c3.927 1.764 8.18 1.764 12.061 0a.075.075 0 0 1 .079.009c.12.098.245.195.372.288a.075.075 0 0 1-.006.125c-.598.344-1.22.635-1.873.877a.075.075 0 0 0-.041.105c.36.687.772 1.341 1.225 1.962a.077.077 0 0 0 .084.028 19.963 19.963 0 0 0 6.002-2.981.076.076 0 0 0 .032-.054c.5-5.094-.838-9.52-3.549-13.442a.06.06 0 0 0-.031-.028zM8.02 15.278c-1.182 0-2.157-1.069-2.157-2.38 0-1.312.956-2.38 2.157-2.38 1.21 0 2.176 1.077 2.157 2.38 0 1.312-.956 2.38-2.157 2.38zm7.975 0c-1.183 0-2.157-1.069-2.157-2.38 0-1.312.955-2.38 2.157-2.38 1.21 0 2.176 1.077 2.157 2.38 0 1.312-.946 2.38-2.157 2.38z"/>
+            </svg>
+          </a>
+          <a href="#" class="social-link" title="YouTube">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+          </a>
+          <a href="#" class="social-link" title="Instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
+            </svg>
+          </a>
+          <a href="#" class="social-link" title="X">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/>
+            </svg>
+          </a>
+        </div>
+        <div class="version">LAUNCHER V1.0.0</div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+
+      <section class="hero">
+        <div class="hero-bg">
+          <svg viewBox="0 0 1000 600" preserveAspectRatio="xMaxYMid slice" class="hero-art">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#2a2d33"/>
+                <stop offset="100%" stop-color="#0d0e10"/>
+              </linearGradient>
+              <linearGradient id="visor" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ff9a3c"/>
+                <stop offset="100%" stop-color="#ff5a1a"/>
+              </linearGradient>
+            </defs>
+            <rect width="1000" height="600" fill="url(#g1)" opacity="0.0"/>
+            <!-- operator silhouette 1 -->
+            <g transform="translate(560,40)">
+              <ellipse cx="120" cy="80" rx="70" ry="78" fill="#1b1c1f"/>
+              <rect x="60" y="60" width="120" height="40" rx="14" fill="url(#visor)" opacity="0.9"/>
+              <path d="M40 150 Q120 120 220 150 L260 520 L0 520 Z" fill="#16171a"/>
+              <rect x="-40" y="220" width="340" height="26" rx="10" fill="#101113"/>
+            </g>
+            <!-- operator silhouette 2 -->
+            <g transform="translate(800,90)">
+              <ellipse cx="90" cy="60" rx="55" ry="62" fill="#15161a"/>
+              <rect x="45" y="46" width="90" height="30" rx="10" fill="url(#visor)" opacity="0.7"/>
+              <path d="M20 115 Q90 95 170 115 L195 480 L-10 480 Z" fill="#101114"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="hero-content">
+          <h1 class="hero-title">Neura<span class="hero-title-num">CS</span></h1>
+          <p class="hero-sub">TÁTICA RENOVADA.<br/>UMA NOVA ERA DE COMBATE.</p>
+
+          <div class="hero-actions">
+            <button id="btn-play" class="btn-play is-checking" disabled>
+              <span class="btn-play-spinner"></span>
+              <span id="btn-play-dot" class="btn-play-dot"></span>
+              <span id="btn-play-label" class="btn-play-label">VERIFICANDO STEAM...</span>
+              <span id="btn-play-arrow" class="play-arrow hidden-arrow">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                  <path d="M6 4.5v15a1 1 0 0 0 1.52.85l12-7.5a1 1 0 0 0 0-1.7l-12-7.5A1 1 0 0 0 6 4.5z"/>
+                </svg>
+              </span>
+            </button>
+            <button id="btn-options" class="btn-options">
+              <span id="launch-option-text">VERIFICANDO INSTALAÇÃO...</span>
+              <span class="chevron">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="news">
+        <div class="news-header">
+          <h2>ÚLTIMAS NOTÍCIAS</h2>
+          <a href="#" class="ver-todas">VER TODAS →</a>
+        </div>
+
+        <div class="news-grid">
+          <article class="news-card">
+            <div class="news-thumb thumb-map"></div>
+            <div class="news-body">
+              <span class="news-date">24 MAI 2024</span>
+              <h3>Atualização de Mapas</h3>
+              <p>Mudanças importantes foram feitas em dois mapas competitivos.</p>
+            </div>
+          </article>
+
+          <article class="news-card">
+            <div class="news-thumb thumb-season"></div>
+            <div class="news-body">
+              <span class="news-date">17 MAI 2024</span>
+              <h3>Chegou a Temporada 7!</h3>
+              <p>Novas recompensas, medalhas e muito mais.</p>
+            </div>
+          </article>
+
+          <article class="news-card">
+            <div class="news-thumb thumb-weapon"></div>
+            <div class="news-body">
+              <span class="news-date">10 MAI 2024</span>
+              <h3>Workshop em Destaque</h3>
+              <p>Confira os mapas e skins selecionadas pela comunidade.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="quick-actions">
+
+        <!-- COMPETITIVO -->
+        <button class="quick-card" data-view="competitivo">
+          <span class="quick-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="-50 -55 100 110">
+              <path d="M0,-44 L38,-22 L38,14 Q38,38 0,52 Q-38,38 -38,14 L-38,-22 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M0,-34 L28,-16 L28,12 Q28,30 0,42 Q-28,30 -28,12 L-28,-16 Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" opacity="0.4"/>
+              <polygon points="0,-22 5,-8 20,-8 8,1 13,15 0,6 -13,15 -8,1 -20,-8 -5,-8" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="quick-title">COMPETITIVO</span>
+          <span class="quick-desc">Entre para uma partida ranqueada.</span>
+        </button>
+      
+        <!-- DEATHMATCH -->
+        <button class="quick-card" data-view="deathmatch">
+          <span class="quick-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="-45 -45 90 90">
+              <circle cx="0" cy="0" r="38" fill="none" stroke="currentColor" stroke-width="2.5"/>
+              <circle cx="0" cy="0" r="26" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+              <circle cx="0" cy="0" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+              <line x1="0" y1="-38" x2="0" y2="-15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="0" y1="15" x2="0" y2="38" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="-38" y1="0" x2="-15" y2="0" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="15" y1="0" x2="38" y2="0" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="-4" y1="-38" x2="4" y2="-38" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="-4" y1="38" x2="4" y2="38" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="-38" y1="-4" x2="-38" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="38" y1="-4" x2="38" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="quick-title">DEATHMATCH</span>
+          <span class="quick-desc">Aqueça sua mira em servidores DM.</span>
+        </button>
+      
+        <!-- SERVIDORES -->
+        <button class="quick-card" data-view="servidores2">
+          <span class="quick-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="-40 -48 80 96">
+              <rect x="-34" y="-42" width="68" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2.5"/>
+              <rect x="-34" y="-18" width="68" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2.5"/>
+              <rect x="-34" y="6" width="68" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2.5"/>
+              <circle cx="22" cy="-33" r="3.5" fill="currentColor"/>
+              <circle cx="22" cy="-9" r="3.5" fill="currentColor"/>
+              <circle cx="22" cy="15" r="3.5" fill="currentColor"/>
+              <line x1="-22" y1="-33" x2="8" y2="-33" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+              <line x1="-22" y1="-27" x2="2" y2="-27" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+              <line x1="-22" y1="-9" x2="8" y2="-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+              <line x1="-22" y1="-3" x2="2" y2="-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+              <line x1="-22" y1="15" x2="8" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+              <line x1="-22" y1="21" x2="2" y2="21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+              <line x1="-10" y1="24" x2="-10" y2="36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="10" y1="24" x2="10" y2="36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="-18" y1="36" x2="18" y2="36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="quick-title">SERVIDORES</span>
+          <span class="quick-desc">Navegue e conecte-se a servidores.</span>
+        </button>
+      
+        <!-- CONFIGURAÇÕES -->
+        <button class="quick-card" data-view="config2">
+          <span class="quick-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="-50 -50 100 100">
+              <path d="M-3,-38 L3,-38 L6,-28 Q14,-25 20,-19 L30,-22 L36,-14 L28,-6 Q30,2 28,10 L36,18 L30,26 L20,22 Q14,28 6,30 L4,40 L-4,40 L-6,30 Q-14,28 -20,22 L-30,26 L-36,18 L-28,10 Q-30,2 -28,-6 L-36,-14 L-30,-22 L-20,-19 Q-14,-25 -6,-28 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="0" cy="0" r="14" fill="none" stroke="currentColor" stroke-width="2.5"/>
+              <circle cx="0" cy="0" r="6" fill="currentColor" opacity="0.6"/>
+            </svg>
+          </span>
+          <span class="quick-title">CONFIGURAÇÕES</span>
+          <span class="quick-desc">Ajuste as opções do seu jogo.</span>
+        </button>
+      
+      </section>
+
+    </main>
+
+    <!-- Right panel -->
+    <aside class="right-panel">
+      
+      <!-- <div class="profile">
+        <div class="avatar"></div>
+        <div class="profile-info">
+          <div class="profile-name">Guerrilheiro <span class="verified">✔</span></div>
+          <div class="profile-level">Nível 24</div>
+          <div class="xp-bar"><div class="xp-fill" style="width:62%"></div></div>
+        </div>
+      </div>
+
+      <div class="friends">
+        <div class="friends-header">
+          <span>AMIGOS ONLINE</span>
+          <span class="friends-count">6</span>
+        </div>
+
+        <ul class="friends-list">
+          <li class="friend">
+            <div class="friend-avatar"></div>
+            <div class="friend-info">
+              <div class="friend-name">tiburci0</div>
+              <div class="friend-status">Competitivo - Mirage</div>
+            </div>
+            <span class="status-dot online"></span>
+          </li>
+          <li class="friend">
+            <div class="friend-avatar"></div>
+            <div class="friend-info">
+              <div class="friend-name">fnxL</div>
+              <div class="friend-status">Competitivo - Inferno</div>
+            </div>
+            <span class="status-dot online"></span>
+          </li>
+          <li class="friend">
+            <div class="friend-avatar"></div>
+            <div class="friend-info">
+              <div class="friend-name">b1t</div>
+              <div class="friend-status">No Menu</div>
+            </div>
+            <span class="status-dot idle"></span>
+          </li>
+          <li class="friend">
+            <div class="friend-avatar"></div>
+            <div class="friend-info">
+              <div class="friend-name">nqz</div>
+              <div class="friend-status">Jogando Deathmatch</div>
+            </div>
+            <span class="status-dot online"></span>
+          </li>
+          <li class="friend">
+            <div class="friend-avatar"></div>
+            <div class="friend-info">
+              <div class="friend-name">lucaozy</div>
+              <div class="friend-status">Competitivo - Dust II</div>
+            </div>
+            <span class="status-dot online"></span>
+          </li>
+          <li class="friend">
+            <div class="friend-avatar"></div>
+            <div class="friend-info">
+              <div class="friend-name">noway</div>
+              <div class="friend-status">Ausente</div>
+            </div>
+            <span class="status-dot away"></span>
+          </li>
+        </ul>
+
+        <a href="#" class="ver-todos">VER TODOS AMIGOS →</a>
+      </div> -->
+
+      <div class="store-promo" id="store-carousel">
+        <div class="store-promo-slides">
+
+          <div class="store-slide">
+            <div class="store-slide-inner">
+              <div class="store-slide-text">
+                <div class="store-label">NOVAS SKINS</div>
+                <div class="store-label-accent">NO MERCADO</div>
+              </div>
+              <div class="store-slide-img">
+                <img src="caixa.png" width="90" height="90" style="object-fit:contain;">
+              </div>
+            </div>
+          </div>
+
+          <div class="store-slide">
+            <div class="store-slide-inner">
+              <div class="store-slide-text">
+                <div class="store-label">PASSE DE</div>
+                <div class="store-label-accent">BATALHA</div>
+              </div>
+              <div class="store-slide-img">
+                <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <polygon points="40,6 50,28 74,28 55,44 62,68 40,54 18,68 25,44 6,28 30,28" fill="#1a3a6a" stroke="#4a8aff" stroke-width="2"/>
+                  <polygon points="40,16 47,30 62,30 50,40 55,56 40,46 25,56 30,40 18,30 33,30" fill="#2a5aaa" stroke="#6aaaff" stroke-width="1"/>
+                  <circle cx="40" cy="38" r="8" fill="#4a8aff" opacity="0.8"/>
+                  <text x="40" y="43" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">7</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="store-slide">
+            <div class="store-slide-inner">
+              <div class="store-slide-text">
+                <div class="store-label">OFERTA</div>
+                <div class="store-label-accent">ESPECIAL</div>
+              </div>
+              <div class="store-slide-img">
+                <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M40 10 L55 25 L70 25 L70 40 L55 55 L40 70 L25 55 L10 40 L10 25 L25 25 Z" fill="#3a0a0a" stroke="#cc2222" stroke-width="2"/>
+                  <path d="M40 20 L52 30 L62 30 L62 42 L52 52 L40 62 L28 52 L18 42 L18 30 L28 30 Z" fill="#220808" stroke="#ff4444" stroke-width="1" opacity="0.8"/>
+                  <text x="40" y="46" text-anchor="middle" font-size="22" font-weight="bold" fill="#ff4444">%</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="store-slide">
+            <div class="store-slide-inner">
+              <div class="store-slide-text">
+                <div class="store-label">TEMPORADA</div>
+                <div class="store-label-accent">7 ATIVA</div>
+              </div>
+              <div class="store-slide-img">
+                <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="40" cy="40" r="32" fill="#0a2a0a" stroke="#22aa44" stroke-width="2"/>
+                  <circle cx="40" cy="40" r="22" fill="#0f3a0f" stroke="#44cc66" stroke-width="1"/>
+                  <path d="M40 16 L44 32 L60 32 L47 42 L52 58 L40 48 L28 58 L33 42 L20 32 L36 32 Z" fill="#22aa44" stroke="#44ff66" stroke-width="1"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="dots" id="store-dots"></div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- Launch overlay -->
+  <div id="launch-overlay" class="launch-overlay hidden">
+    <div class="launch-box">
+      <div class="spinner"></div>
+      <div id="launch-text">Iniciando o jogo...</div>
+    </div>
+  </div>
+
+  </div><!-- /.window-frame -->
+
+
+  <script>
+    (function() {
+      const slides = document.querySelectorAll('.store-slide');
+      const dotsEl = document.getElementById('store-dots');
+      let current = 0;
+
+      // Cria dots dinamicamente
+      slides.forEach((_, i) => {
+        const dot = document.createElement('span');
+        if (i === 0) dot.classList.add('dot-active');
+        dot.addEventListener('click', () => goTo(i));
+        dotsEl.appendChild(dot);
+      });
+
+      function goTo(idx) {
+        slides[current].classList.remove('active');
+        dotsEl.children[current].classList.remove('dot-active');
+        current = idx;
+        slides[current].classList.add('active');
+        dotsEl.children[current].classList.add('dot-active');
+      }
+
+      // Ativa o primeiro slide
+      slides[0].classList.add('active');
+
+      // Avança automaticamente a cada 3.5s
+      setInterval(() => goTo((current + 1) % slides.length), 3500);
+    })();
+  </script>
+  <script src="renderer.js"></script>
+</body>
+</html>
