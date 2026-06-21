@@ -13,13 +13,19 @@
  *
  * IMPORTANTE: autoUpdater só funciona em app empacotado (.exe/.dmg/.AppImage
  * instalado), NÃO funciona com `npm start` / `electron .` em modo dev.
- * Para testar de verdade, gere um build com `npm run dist` (ver README).
+ * Para testar de verdade, gere um build com `npm run build` (local, sem
+ * publicar) ou `npm run release` (builda E publica no GitHub Releases).
  */
 
 const { autoUpdater } = require('electron-updater');
 const { app } = require('electron');
 
 let mainWindow = null;
+
+// Reverifica de tempos em tempos enquanto o launcher fica aberto — assim,
+// se uma atualização sair enquanto o usuário já está com o app aberto há
+// horas, ele ainda vai detectar sem precisar reabrir o launcher.
+const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 horas
 
 function init(win) {
   mainWindow = win;
@@ -56,6 +62,12 @@ function init(win) {
     console.error('[AutoUpdate] Erro:', err);
     send('update-status', { status: 'error', message: err?.message || String(err) });
   });
+
+  // Primeira checagem é disparada manualmente em main.js (checkForUpdates()
+  // logo no boot). A partir daí, esse intervalo cuida do resto.
+  setInterval(() => {
+    checkForUpdates();
+  }, CHECK_INTERVAL_MS);
 }
 
 function send(channel, payload) {

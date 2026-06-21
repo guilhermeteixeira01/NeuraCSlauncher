@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder"
+    "build": "electron-builder --publish never",
+    "release": "electron-builder --publish always"
   },
   "author": "",
   "license": "MIT",
@@ -26,6 +27,8 @@
       "preload.js",
       "discord-rpc.js",
       "auto-update.js",
+      "steam-detect.js",
+      "game-watcher.js",
       "src/**/*",
       "node_modules/**/*"
     ],
@@ -44,8 +47,8 @@
     "publish": {
       "provider": "github",
       "owner": "guilhermeteixeira01",
-      "repo": "NeuraCSlauncher"
+      "repo": "NeuraCSlauncher",
+      "releaseType": "release"
     }
   }
 }
-

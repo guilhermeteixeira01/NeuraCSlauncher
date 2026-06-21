@@ -1,0 +1,32 @@
+# Dependências
+node_modules/
+
+# Build
+dist/
+
+# Dados locais do usuário (não versionar dados pessoais)
+dados.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Cache do electron-builder
+.cache/
+
+# Variáveis de ambiente
+.env
+.env.local
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Mac
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.user
