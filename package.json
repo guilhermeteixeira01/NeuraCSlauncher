@@ -1,0 +1,51 @@
+{
+  "name": "neuracs-launcher",
+  "version": "1.0.0",
+  "description": "Launcher CS",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "electron-reload": "^2.0.0-alpha.1"
+  },
+  "dependencies": {
+    "@xhayper/discord-rpc": "^1.2.0",
+    "electron-updater": "^6.3.0"
+  },
+  "build": {
+    "appId": "com.vanguard.launcher",
+    "productName": "Vanguard Launcher",
+    "files": [
+      "main.js",
+      "preload.js",
+      "discord-rpc.js",
+      "auto-update.js",
+      "src/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "src/logo.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "src/logo.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "src/logo.png"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "guilhermeteixeira01",
+      "repo": "NeuraCSlauncher"
+    }
+  }
+}
+
