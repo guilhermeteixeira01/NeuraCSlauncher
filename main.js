@@ -12,6 +12,10 @@ const launchConfig = require('./launch-config');
 // (executável escolhido pelo usuário nas opções de inicialização).
 let cs16Info = { detected: false };
 let tray = null;
+let splashWindow = null;
+let mainWindowReady = false;
+let splashPageReady = false;
+let bootTransitionStarted = false;
 
 // Live-reload em desenvolvimento: recarrega a janela sozinho quando você
 // salva mudanças em src/ (HTML, CSS, JS). NÃO entra no app empacotado
@@ -77,6 +81,7 @@ function createWindow() {
     transparent: true,
     backgroundColor: '#00000000',
     hasShadow: true,
+    show: false, // fica escondida até a splash terminar (ver showMainWindowFromSplash)
     icon: path.join(__dirname, 'src', `logo.${iconExt}`),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -142,36 +147,220 @@ function showMainWindow() {
   mainWindow.focus();
 }
 
-app.whenReady().then(() => {
+// ===== Splash screen =====
+// Janela pequena, sem moldura, que aparece assim que o app abre — enquanto
+// a janela principal carrega de verdade em segundo plano (Discord RPC,
+// checagem de update, detecção do CS 1.6). Sem ela, esses passos iniciais
+// deixariam uma janela vazia/branca piscando por um instante.
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 420,
+    height: 460,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    resizable: false,
+    movable: true,
+    hasShadow: true,
+    show: false,
+    skipTaskbar: true,
+    icon: path.join(__dirname, 'src', 'logo.png'),
+    webPreferences: {
+      preload: path.join(__dirname, 'splash-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      backgroundThrottling: false // sem isso a animação CSS "congela" num frame parado
+                                   // enquanto a janela nasce escondida (show:false)
+    }
+  });
+
+  splashWindow.loadFile(path.join(__dirname, 'src', 'splash.html')).catch((err) => {
+    console.error('[Splash] Erro ao carregar splash.html — pulando direto pra janela principal:', err);
+    if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
+  });
+
+  splashWindow.webContents.once('did-finish-load', () => {
+    splashPageReady = true;
+
+    console.log("Splash carregada");
+
+    setTimeout(() => {
+        splashWindow.webContents.send(
+            "splash-status",
+            "Iniciando launcher..."
+        );
+
+        splashWindow.webContents.send(
+            "splash-progress",
+            15
+        );
+
+        splashWindow.webContents.send(
+            "splash-version",
+            app.getVersion()
+        );
+    },500);
+  });
+
+  splashWindow.once('ready-to-show', () => {
+    console.log('[Splash] Pronta, exibindo.');
+    splashWindow.show();
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.webContents.send('splash-version', app.getVersion());
+    }
+  });
+
+  splashWindow.on('closed', () => { splashWindow = null; });
+}
+
+function sendSplashStatus(text) {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.webContents.send('splash-status', text);
+  }
+}
+
+function sendSplashProgress(pct) {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.webContents.send('splash-progress', pct);
+  }
+}
+
+function waitForSplashPage() {
+  return new Promise((resolve) => {
+    if (splashPageReady) {
+      resolve();
+      return;
+    }
+
+    const check = setInterval(() => {
+      if (splashPageReady) {
+        clearInterval(check);
+        resolve();
+      }
+    }, 16);
+
+    setTimeout(() => {
+      clearInterval(check);
+      resolve();
+    }, 5000);
+  });
+}
+
+function waitForMainWindowLoad() {
+  return new Promise((resolve) => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      resolve();
+      return;
+    }
+
+    if (!mainWindow.webContents.isLoading()) {
+      resolve();
+      return;
+    }
+
+    mainWindow.webContents.once('did-finish-load', () => resolve());
+    setTimeout(resolve, 8000);
+  });
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Tempo alinhado com a transição CSS da barra (splash.html).
+const PROGRESS_ANIM_MS = 420;
+const STEP_HOLD_MS = 320;
+
+async function runSplashStep(status, progress) {
+  sendSplashStatus(status);
+
+  // pequena pausa para atualizar o texto
+  await delay(80);
+
+  sendSplashProgress(progress);
+
+  // espera a animação terminar
+  await delay(900);
+}
+
+function showMainWindowFromSplash() {
+  if (bootTransitionStarted) return;
+  bootTransitionStarted = true;
+  mainWindowReady = true;
+
+  showMainWindow();
+
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.webContents.send('splash-fade-out');
+    setTimeout(() => {
+      if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
+    }, 320);
+  }
+}
+
+async function runBootSequence() {
+  await waitForSplashPage();
+  await delay(120);
+
+  await runSplashStep('Iniciando launcher...', 15);
+
   launchConfig.init(app);
   createWindow();
   createTray();
+
+  await runSplashStep('Conectando ao Discord...', 35);
   discordRPC.connect();
 
+  await runSplashStep('Verificando atualizações...', 58);
   autoUpdate.init(mainWindow);
   autoUpdate.checkForUpdates();
 
-  // Detecta se o CS 1.6 já está instalado: primeiro via Steam
-  // (automático), e se não achar, olha se existe um caminho manual
-  // configurado pelo usuário nas opções de inicialização.
-  // Roda só uma vez no boot — se o usuário instalar o jogo ou escolher
-  // um executável com o launcher já aberto, a tela de opções já
-  // atualiza na hora (não depende de reiniciar o app).
-  cs16Info = resolveCs16Info();
+  await runSplashStep('Verificando instalação do jogo...', 78);
+  try {
+    cs16Info = resolveCs16Info();
+  } catch (err) {
+    console.error('[Detect] Erro ao detectar CS 1.6, seguindo sem detecção:', err);
+    cs16Info = { detected: false, reason: 'detect-error' };
+  }
   if (cs16Info.detected) {
     console.log(`[Detect] CS 1.6 encontrado (${cs16Info.source}):`, cs16Info.installPath || cs16Info.exePath);
   } else {
     console.log('[Detect] CS 1.6 não encontrado:', cs16Info.reason);
   }
 
-  mainWindow.webContents.once('did-finish-load', () => {
-    // Pequeno delay propositado: sem ele a checagem é tão rápida que o
-    // estado "verificando..." nem pisca na tela — fica mais claro pro
-    // usuário que o launcher de fato checou a instalação.
-    setTimeout(() => {
-      mainWindow.webContents.send('game-detected', { ...cs16Info, links: launchConfig.getLinks() });
-    }, 1200);
-  });
+  await runSplashStep('Carregando interface...', 92);
+  await waitForMainWindowLoad();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('game-detected', { ...cs16Info, links: launchConfig.getLinks() });
+  }
+
+  await runSplashStep('Pronto!', 100);
+
+  // deixa a barra terminar a animação
+  await delay(1200);
+
+  showMainWindowFromSplash();
+}
+
+app.whenReady().then(async () => {
+  console.log('[Boot] app ready — criando splash...');
+  createSplashWindow();
+
+  const failsafeTimer = setTimeout(() => {
+    if (!mainWindowReady) {
+      console.warn('[Boot] Failsafe acionado — forçando exibição da janela principal.');
+      showMainWindowFromSplash();
+    }
+  }, 20000);
+
+  try {
+    await runBootSequence();
+    clearTimeout(failsafeTimer);
+  } catch (err) {
+    console.error('[Boot] Erro durante a inicialização — mostrando janela principal mesmo assim:', err);
+    clearTimeout(failsafeTimer);
+    showMainWindowFromSplash();
+  }
 });
 
 app.on('window-all-closed', () => {
@@ -188,7 +377,10 @@ app.on('before-quit', () => {
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+    mainWindow.once('ready-to-show', () => showMainWindow());
+  }
 });
 
 // Window control handlers (custom title bar buttons)
@@ -287,6 +479,8 @@ function startWatchingGameProcess(processName) {
     }
   });
 }
+
+ipcMain.handle('get-app-version', () => app.getVersion());
 
 // Abre o diálogo nativo de "escolher arquivo" pra o usuário apontar um
 // executável do jogo (qualquer instalação que a detecção automática da

@@ -21,6 +21,8 @@ contextBridge.exposeInMainWorld('api', {
   // link configurado em launch-config.js) quando nenhum jogo é encontrado.
   browseGameExecutable: () => ipcRenderer.invoke('browse-game-executable'),
   clearGameExecutable: () => ipcRenderer.send('clear-game-executable'),
-  openExternalLink: (url) => ipcRenderer.send('open-external-link', url)
+  openExternalLink: (url) => ipcRenderer.send('open-external-link', url),
+
+  getVersion: () => ipcRenderer.invoke('get-app-version')
 });
 

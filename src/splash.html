@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Neura CS Launcher</title>
+<style>
+  :root{
+    --bg: #0b0c0f;
+    --panel: #121317;
+    --border: #232427;
+    --text: #f1f1f1;
+    --text-dim: #9a9ba3;
+    --orange: #ff7a1a;
+    --orange-2: #ff9a3c;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{
+    width:100%; height:100%;
+    background:transparent;
+    color:var(--text);
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    overflow:hidden;
+    user-select:none;
+  }
+
+  /* Mesma lógica do window-frame do app principal: a janela do Electron
+     é transparente, essa div que dá a aparência de janela de verdade. */
+  .splash-frame{
+    width:100%;
+    height:100vh;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background: radial-gradient(circle at 50% 30%, #161719 0%, var(--bg) 70%);
+    border:1px solid #2a2b30;
+    border-radius:16px;
+    overflow:hidden;
+    opacity:0;
+    animation: fadeIn .4s ease forwards;
+    -webkit-app-region: drag;
+  }
+
+  /* Fade-out disparado pelo main process pouco antes de fechar a splash */
+  .splash-frame.fade-out{
+    animation: fadeOut .35s ease forwards;
+  }
+
+  @keyframes fadeIn{
+    from{ opacity:0; transform: scale(.98); }
+    to{ opacity:1; transform: scale(1); }
+  }
+  @keyframes fadeOut{
+    from{ opacity:1; }
+    to{ opacity:0; }
+  }
+
+  /* Glow sutil atrás do logo, igual ao espírito do glow do botão JOGAR
+     quando o jogo é detectado — mantém a mesma "linguagem" do app. */
+  .glow{
+    position:absolute;
+    width:340px; height:340px;
+    border-radius:50%;
+    background: radial-gradient(circle, rgba(255,122,26,.18), transparent 70%);
+    filter: blur(4px);
+    animation: pulseGlow 2.6s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes pulseGlow{
+    0%, 100%{ transform: scale(1); opacity:.7; }
+    50%{ transform: scale(1.12); opacity:1; }
+  }
+
+  .logo-wrap{
+    position:relative;
+    z-index:2;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+  }
+
+  .logo{
+    width:96px;
+    height:96px;
+    object-fit:contain;
+    filter: drop-shadow(0 6px 18px rgba(0,0,0,.5));
+    animation: floatLogo 3.2s ease-in-out infinite;
+  }
+  
+  @keyframes floatLogo{
+    0%, 100%{ transform: translateY(0); }
+    50%{ transform: translateY(-6px); }
+  }
+
+  .brand-name{
+    font-size:18px;
+    font-weight:900;
+    letter-spacing:1.5px;
+    font-style:italic;
+  }
+  .brand-name .accent{
+    color:transparent;
+    -webkit-text-stroke: 1.4px var(--orange);
+  }
+
+  .status{
+    margin-top:8px;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.4px;
+    color:var(--text-dim);
+    min-height:16px;
+    transition: opacity .15s ease;
+  }
+
+  .progress-track{
+    margin-top:18px;
+    width:220px;
+    height:4px;
+    border-radius:3px;
+    background:#1c1d22;
+    overflow:hidden;
+    position:relative;
+  }
+  .progress-fill{
+    position:absolute;
+    top:0;
+    left:0;
+    height:100%;
+    width:100%;
+    border-radius:3px;
+    background:linear-gradient(90deg,var(--orange),var(--orange-2));
+    transform:scaleX(0);
+    transform-origin:left center;
+
+    transition:transform .8s ease;
+
+    will-change:transform;
+}
+
+  .progress-fill.complete{
+    box-shadow: 0 0 12px rgba(255, 122, 26, 0.45);
+  }
+
+  .version-tag{
+    position:absolute;
+    bottom:14px;
+    right:18px;
+    font-size:10.5px;
+    color:#5a5b61;
+    letter-spacing:.4px;
+    z-index:2;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .glow, .logo, .progress-fill{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="splash-frame" class="splash-frame">
+    <div class="glow"></div>
+
+    <div class="logo-wrap">
+      <img src="logo.png" class="logo" alt="Neura" />
+      <div class="brand-name">NEURA<span class="accent"> CS</span> LAUNCHER</div>
+
+      <div class="progress-track">
+        <div class="progress-fill"></div>
+      </div>
+      <div id="status" class="status">Iniciando...</div>
+    </div>
+
+    <div id="version-tag" class="version-tag"></div>
+  </div>
+
+  <script>
+    const frame = document.getElementById('splash-frame');
+    const statusEl = document.getElementById('status');
+    const versionEl = document.getElementById('version-tag');
+    const progressFill = document.querySelector('.progress-fill');
+
+    let currentProgress = 0;
+
+    const progressByStatus = {
+      'Iniciando launcher...': 15,
+      'Conectando ao Discord...': 35,
+      'Verificando atualizações...': 58,
+      'Verificando instalação do jogo...': 78,
+      'Carregando interface...': 92,
+      'Pronto!': 100
+    };
+
+    function setProgress(pct){
+
+      const next = Math.max(0,Math.min(100,pct));
+
+      currentProgress = next;
+
+      progressFill.style.transform = `scaleX(${next/100})`;
+
+      if(next >= 100){
+          progressFill.classList.add("complete");
+      }
+    }
+
+    window.splashApi.onStatus((text) => {
+      statusEl.style.opacity = '0';
+      setTimeout(() => {
+        statusEl.textContent = text;
+        statusEl.style.opacity = '1';
+      }, 120);
+
+      const mapped = progressByStatus[text];
+      if (mapped !== undefined) setProgress(mapped);
+    });
+
+    window.splashApi.onProgress((pct) => {
+
+    setTimeout(() => {
+
+        setProgress(pct);
+
+    },50);
+
+    });
+
+    window.splashApi.onVersion((version) => {
+      if (version) versionEl.textContent = 'v' + version;
+    });
+
+    window.splashApi.onFadeOut(() => {
+      frame.classList.add('fade-out');
+    });
+
+    requestAnimationFrame(() => setProgress(4));
+  </script>
+</body>
+</html>

@@ -1,3 +1,9 @@
+// ===== App version (package.json via main process) =====
+window.api.getVersion().then((version) => {
+  const versionEl = document.getElementById('app-version');
+  if (version && versionEl) versionEl.textContent = `LAUNCHER V${version}`;
+});
+
 // ===== Window controls =====
 document.getElementById('btn-min').addEventListener('click', () => window.api.minimize());
 document.getElementById('btn-max').addEventListener('click', () => window.api.maximize());
