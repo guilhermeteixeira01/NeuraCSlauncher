@@ -658,12 +658,21 @@
     <span class="status-dot" id="gh-status-dot"></span>
     <span id="gh-status-text">Configure o GitHub para salvar automaticamente</span>
   </div>
-  <button id="btn-save-gh">
+  <div style="display:flex;align-items:center;gap:8px">
+    <button id="btn-reload-gh" style="background:transparent;border:1px solid var(--border2);color:var(--dim);padding:9px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+      Recarregar do GitHub
+    </button>
+    <button id="btn-save-gh">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
       <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
     </svg>
     Salvar no GitHub
   </button>
+  </div>
 </div>
 
 <!-- MODAL: ANÚNCIO -->
@@ -1052,6 +1061,57 @@ function updateGhStatus() {
   }
 }
 
+// ── GITHUB LOAD ────────────────────────────────────────────────────────
+// Busca o announcements.json que já está no repositório (fonte de
+// verdade) e substitui o estado local por ele. Usa a Contents API (em
+// vez do raw) porque ela já devolve o "sha" do arquivo, que a gente
+// precisa guardar pra conseguir salvar (PUT) depois sem conflito.
+function decodeGhContent(base64WithNewlines) {
+  const clean = base64WithNewlines.replace(/\n/g, '');
+  return decodeURIComponent(escape(atob(clean)));
+}
+
+async function loadFromGitHub({ silent = false } = {}) {
+  const c = ghCfg();
+  if (!c.owner || !c.repo) {
+    if (!silent) toast('Configure o GitHub primeiro.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-reload-gh');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+
+  const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${c.path}?ref=${c.branch}`;
+  const headers = { 'Accept': 'application/vnd.github.v3+json' };
+  if (c.token) headers['Authorization'] = `token ${c.token}`;
+
+  try {
+    const res = await fetch(url, { headers });
+    if (res.status === 404) {
+      // Arquivo ainda não existe no repo — não é erro, é primeira vez.
+      ghSha = null;
+      if (!silent) toast('Nenhum announcements.json encontrado ainda no repositório.', 'info');
+      return;
+    }
+    if (!res.ok) throw new Error(`GitHub API: ${res.status} ${res.statusText}`);
+
+    const data = await res.json();
+    ghSha = data.sha || null;
+
+    const parsed = JSON.parse(decodeGhContent(data.content || ''));
+    announcements = Array.isArray(parsed.announcements) ? parsed.announcements : [];
+
+    localStorage.setItem('ncs_announcements', JSON.stringify(announcements));
+    render();
+    if (!silent) toast(`✓ ${announcements.length} anúncio(s) carregado(s) do GitHub.`, 'success');
+  } catch (err) {
+    console.error(err);
+    if (!silent) toast(`Erro ao carregar: ${err.message}`, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  }
+}
+
 // ── GITHUB SAVE ────────────────────────────────────────────────────────
 async function saveToGitHub() {
   const c = ghCfg();
@@ -1065,8 +1125,10 @@ async function saveToGitHub() {
   btn.disabled = true;
   btn.innerHTML = '⏳ Salvando...';
 
-  const active  = announcements.filter(a => a.status === 'active');
-  const content = JSON.stringify({ announcements: active }, null, 2);
+  // Envia TODOS os anúncios (ativos e inativos) — assim editar de outro
+  // navegador/PC depois (via "Recarregar do GitHub") não perde os
+  // inativos. O launcher já filtra por status "active" sozinho.
+  const content = JSON.stringify({ announcements }, null, 2);
   const encoded = btoa(unescape(encodeURIComponent(content)));
 
   const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${c.path}`;
@@ -1127,6 +1189,7 @@ document.getElementById('config-save').addEventListener('click', saveConfig);
 document.getElementById('config-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfig(); });
 
 document.getElementById('btn-save-gh').addEventListener('click', saveToGitHub);
+document.getElementById('btn-reload-gh').addEventListener('click', () => loadFromGitHub());
 document.getElementById('btn-copy-json').addEventListener('click', copyJson);
 
 document.getElementById('search').addEventListener('input', render);
@@ -1146,6 +1209,7 @@ document.addEventListener('keydown', e => {
 
 // ── INIT ───────────────────────────────────────────────────────────────
 render();
+loadFromGitHub({ silent: true });
 </script>
 </body>
 </html>

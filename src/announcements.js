@@ -69,14 +69,42 @@ const THUMB_BY_TYPE = {
   event: 'thumb-weapon',
 };
 
+// Mesmas cores do badge "tipo" do Dashboard (.ann-type) — mas em vez de
+// emoji (que fica com peso/alinhamento inconsistente entre Windows/Mac),
+// usa o mesmo padrão visual de "bolinha colorida + texto" que o próprio
+// style.css já usa em .status-dot (lista de amigos), pra ficar nativo
+// do app em vez de algo "colado por fora".
+const TYPE_BADGE = {
+  news:   { label: 'NOTÍCIA',     color: '#ff7a1a' },
+  update: { label: 'ATUALIZAÇÃO', color: '#3ddc84' },
+  event:  { label: 'EVENTO',      color: '#e8b923' },
+  promo:  { label: 'PROMOÇÃO',    color: '#b080ff' },
+};
+
+function renderTypeBadge(type) {
+  const t = TYPE_BADGE[type] || TYPE_BADGE.news;
+  return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:.6px;color:${t.color};text-transform:uppercase;line-height:1">
+    <span style="width:6px;height:6px;border-radius:50%;background:${t.color};box-shadow:0 0 6px ${t.color}80;flex-shrink:0"></span>${t.label}
+  </span>`;
+}
+
 function renderCard(a) {
   const thumbClass = THUMB_BY_TYPE[a.type] || 'thumb-map';
+  // Se vier uma imagem, usa ela. Se a URL falhar ao carregar (link quebrado,
+  // imagem removida, etc), o onerror troca pra cor sólida sem deixar buraco.
+  const thumbHtml = a.image
+    ? `<img src="${escapeHtml(a.image)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.replaceWith(Object.assign(document.createElement('div'), { className: 'news-thumb ${thumbClass}' }))"/>`
+    : '';
+
   return `
     <article class="news-card">
-      <div class="news-thumb ${thumbClass}"></div>
+      <div class="news-thumb ${a.image ? '' : thumbClass}">${thumbHtml}</div>
       <div class="news-body">
-        <span class="news-date">${escapeHtml(formatDate(a.date))}</span>
-        <h3>${escapeHtml(a.title)}</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          ${renderTypeBadge(a.type)}
+          <span class="news-date" style="margin:0">${escapeHtml(formatDate(a.date))}</span>
+        </div>
+        <h3 style="margin:0 0 4px">${escapeHtml(a.title)}</h3>
         <p>${escapeHtml(a.description)}</p>
       </div>
     </article>`;
@@ -106,3 +134,9 @@ async function loadAnnouncements() {
 }
 
 loadAnnouncements();
+
+// Recarrega sozinho a cada 5 minutos, sem precisar reabrir o launcher —
+// garante que um anúncio novo apareça pro cliente mesmo que ele deixe o
+// launcher aberto em segundo plano por um tempão.
+const ANNOUNCEMENTS_REFRESH_MS = 5 * 60 * 1000;
+setInterval(loadAnnouncements, ANNOUNCEMENTS_REFRESH_MS);
