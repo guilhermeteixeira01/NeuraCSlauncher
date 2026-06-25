@@ -1,6 +1,16 @@
 {
   "announcements": [
     {
+      "id": "mqst00f6n0zqj",
+      "title": "Neura Bots",
+      "description": "Venha contratar Bots automatizados para seu Discord !!",
+      "image": "https://i.imgur.com/gkdwiuw.gif",
+      "type": "news",
+      "date": "2026-06-25",
+      "link": "https://neurabot.com.br",
+      "status": "active"
+    },
+    {
       "id": "mqsrvpjsl56gv",
       "title": "TESTE",
       "description": "teste de sistema de Anuncio",
