@@ -1,36 +1,6 @@
 {
   "announcements": [
     {
-      "id": "mqssdqmawe458",
-      "title": "test 3",
-      "description": "test 3",
-      "image": null,
-      "type": "promo",
-      "date": "2026-06-25",
-      "link": null,
-      "status": "active"
-    },
-    {
-      "id": "mqssdldzfla6r",
-      "title": "test 2",
-      "description": "test 2",
-      "image": null,
-      "type": "event",
-      "date": "2026-06-25",
-      "link": null,
-      "status": "active"
-    },
-    {
-      "id": "mqssdfirurffv",
-      "title": "TESTE",
-      "description": "123",
-      "image": null,
-      "type": "update",
-      "date": "2026-06-25",
-      "link": null,
-      "status": "active"
-    },
-    {
       "id": "mqsrvpjsl56gv",
       "title": "TESTE",
       "description": "teste de sistema de Anuncio",
