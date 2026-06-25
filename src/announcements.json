@@ -1,3 +1,13 @@
 {
-  "announcements": []
+  "announcements": [
+    {
+      "id": "mqsrbgo2qqwm0",
+      "title": "TESTE",
+      "description": "123",
+      "type": "update",
+      "date": "2026-06-25",
+      "link": null,
+      "status": "active"
+    }
+  ]
 }
