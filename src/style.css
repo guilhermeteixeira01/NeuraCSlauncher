@@ -33,7 +33,10 @@ html,body{
   position:relative;
   display:flex;
   flex-direction:column;
-  background:var(--bg);
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(255,255,255,.012) 40px,rgba(255,255,255,.012) 41px),
+    repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(255,255,255,.012) 40px,rgba(255,255,255,.012) 41px),
+    linear-gradient(160deg,#0f1014 0%,#0b0c0f 40%,#0d0e12 100%);
   border:1px solid #2a2b30;
   border-radius:12px;
   overflow:hidden;
@@ -62,7 +65,9 @@ html,body{
 .btn-update-install,
 .launch-options-menu,
 .lom-item,
-.no-game-panel{
+.no-game-panel,
+.main,
+.right-panel{
   -webkit-app-region: no-drag;
 }
 
@@ -143,26 +148,32 @@ html,body{
 /* ===== App grid ===== */
 .app{
   display:grid;
-  grid-template-columns: 230px 1fr 320px;
+  grid-template-columns: 200px 1fr 280px;
   flex:1;
   min-height:0;
+  overflow:hidden;
 }
 
 /* ===== Sidebar ===== */
 .sidebar{
-  background:var(--panel);
-  border-right:1px solid var(--border);
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 32px,rgba(255,255,255,.015) 32px,rgba(255,255,255,.015) 33px),
+    linear-gradient(180deg,#131418 0%,#0f1013 100%);
+  border-right:1px solid #252629;
   display:flex;
   flex-direction:column;
   padding:22px 16px;
+  min-height:0;
+  overflow:hidden;
 }
 .brand{
-  display:flex; align-items:center; gap:10px;
-  margin-bottom:34px;
-  padding-left:4px;
+  display:flex; 
+  align-items:center; 
+  justify-content:center;
+  margin-bottom: 24px;
 }
 .logo{
-  width: 100%;
+  width: 60%;
 }
 .nav{ display:flex; flex-direction:column; gap:4px; flex:1; }
 .nav-item{
@@ -208,22 +219,36 @@ html,body{
 
 /* ===== Main content ===== */
 .main{
-  overflow-y:auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
-.main::-webkit-scrollbar{ width:8px; }
-.main::-webkit-scrollbar-thumb{ background:#222327; border-radius:4px; }
+.main::-webkit-scrollbar{ width:6px; }
+.main::-webkit-scrollbar-track{ background: transparent; }
+.main::-webkit-scrollbar-thumb{ background:var(--orange); border-radius:4px; }
+.main::-webkit-scrollbar-thumb:hover{ background:var(--orange-2); }
 
 .hero{
   position:relative;
   overflow:hidden;
   height:420px;
-  background-image: url('https://4kwallpapers.com/images/wallpapers/counter-strike--9192.png');
+  /* background-image: url('https://4kwallpapers.com/images/wallpapers/counter-strike--9192.png') */;
   background-repeat: no-repeat;
   background-size: 100%;
   background-position: center;
   display:flex;
   align-items:flex-end;
+  animation: heroimgs 30s infinite;
 }
+
+@keyframes heroimgs {
+  0%   { background-image: url('https://4kwallpapers.com/images/wallpapers/counter-strike--9192.png'); }
+  25%  { background-image: url('https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/items/273110/5517e9ce03717bff29b8d5da5bbc6484fc9c8904.jpg'); }
+  50%  { background-image: url('https://wallpaperaccess.com/full/2086790.jpg'); }
+  75%  { background-image: url('https://sm.ign.com/t/ign_ap/articlepage/c/counter-strike-nexon-zombies-free-to-play-hits-ste/counter-strike-nexon-zombies-free-to-play-hits-ste_pamy.1280.jpg'); }
+  100% { background-image: url('https://4kwallpapers.com/images/wallpapers/counter-strike--9192.png'); }
+}
+
 .hero-content{
   position:relative;
   z-index:2;
@@ -470,14 +495,23 @@ html,body{
   gap:16px;
 }
 .news-card{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:12px;
+  background: linear-gradient(145deg,#181920 0%,#101215 100%);
+  border:1px solid #252629;
+  border-radius:10px;
   overflow:hidden;
   cursor:pointer;
-  transition: transform .15s, border-color .15s;
+  position:relative;
+  transition: transform .15s, border-color .15s, box-shadow .15s;
 }
-.news-card:hover{ transform:translateY(-3px); border-color:#34353a; }
+.news-card::before{
+  content:'';
+  position:absolute;
+  top:0; left:0;
+  width:24px; height:2px;
+  background: linear-gradient(90deg, var(--orange), transparent);
+  z-index:1;
+}
+.news-card:hover{ transform:translateY(-3px); border-color:#ff7a1a33; box-shadow: 0 6px 20px -6px rgba(255,122,26,.2); }
 .news-thumb{ height:110px; }
 .thumb-map{ background: linear-gradient(135deg,#2c3a4a,#10151c); }
 .thumb-season{ background: linear-gradient(135deg,#3a2c10,#15110a); }
@@ -492,13 +526,14 @@ html,body{
   padding:24px 28px 40px;
   margin-top:30px;
   display:grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap:16px;
 }
 .quick-card{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:12px;
+  position:relative;
+  background: linear-gradient(145deg,#1a1b21 0%,#111215 60%,#0e0f12 100%);
+  border:1px solid #2a2b30;
+  border-radius:10px;
   padding:22px 16px;
   display:flex;
   flex-direction:column;
@@ -507,23 +542,63 @@ html,body{
   cursor:pointer;
   color:var(--text);
   text-align:left;
-  transition: transform .15s, border-color .15s;
+  overflow:hidden;
+  transition: transform .15s, border-color .15s, box-shadow .15s;
 }
-.quick-card:hover{ transform:translateY(-3px); border-color:#3a3b40; }
-.quick-icon{ font-size:22px; color:var(--orange); }
-.quick-title{ font-size:13px; font-weight:800; letter-spacing:0.5px; }
-.quick-desc{ font-size:12px; color:var(--text-dim); line-height:1.4; }
+/* corner accent line top-left */
+.quick-card::before{
+  content:'';
+  position:absolute;
+  top:0; left:0;
+  width:32px; height:2px;
+  background: linear-gradient(90deg, var(--orange), transparent);
+}
+.quick-card::after{
+  content:'';
+  position:absolute;
+  top:0; left:0;
+  width:2px; height:32px;
+  background: linear-gradient(180deg, var(--orange), transparent);
+}
+/* subtle diagonal grid texture */
+.quick-card .quick-bg{
+  position:absolute;
+  inset:0;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 8px,
+      rgba(255,255,255,.018) 8px,
+      rgba(255,255,255,.018) 9px
+    );
+  pointer-events:none;
+}
+.quick-card:hover{
+  transform:translateY(-3px);
+  border-color:#ff7a1a44;
+  box-shadow: 0 8px 24px -8px rgba(255,122,26,.25), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.quick-icon{ font-size:22px; color:var(--orange); position:relative; z-index:1; }
+.quick-title{ font-size:13px; font-weight:800; letter-spacing:0.5px; position:relative; z-index:1; }
+.quick-desc{ font-size:12px; color:var(--text-dim); line-height:1.4; position:relative; z-index:1; }
 
 /* ===== Right panel ===== */
 .right-panel{
-  background:var(--panel);
-  border-left:1px solid var(--border);
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 32px,rgba(255,255,255,.013) 32px,rgba(255,255,255,.013) 33px),
+    linear-gradient(180deg,#131418 0%,#0f1013 100%);
+  border-left:1px solid #252629;
   padding:54px 18px 22px;
   overflow-y:auto;
+  overflow-x:hidden;
+  min-height:0;
   display:flex;
   flex-direction:column;
   gap:24px;
 }
+.right-panel::-webkit-scrollbar{ width:4px; }
+.right-panel::-webkit-scrollbar-thumb{ background:#34353a; border-radius:4px; }
 .profile{ display:flex; gap:12px; align-items:center; }
 .avatar{
   width:48px; height:48px;

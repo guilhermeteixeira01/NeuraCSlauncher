@@ -73,10 +73,10 @@ function createWindow() {
                 : 'png';
 
   mainWindow = new BrowserWindow({
-    width: 1536,
-    height: 1024,
-    minWidth: 1100,
-    minHeight: 700,
+    width: 1280,
+    height: 780,
+    minWidth: 1000,
+    minHeight: 660,
     frame: false,
     transparent: true,
     backgroundColor: '#00000000',
