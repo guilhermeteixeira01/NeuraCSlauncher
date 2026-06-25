@@ -4,7 +4,8 @@
       "id": "mqsrbgo2qqwm0",
       "title": "TESTE",
       "description": "123",
-      "type": "update",
+      "image": "https://i.pinimg.com/736x/3e/1e/7f/3e1e7fcc620ee3d796e416ad0f003e7e.jpg",
+      "type": "event",
       "date": "2026-06-25",
       "link": null,
       "status": "active"
