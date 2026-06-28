@@ -20,7 +20,7 @@ const STEAM_STORE_URL = 'https://store.steampowered.com/app/10/CounterStrike/';
 let configPath = null;
 let cache = {
   customGamePath: null,
-  secondaryLink: '' // <- coloque aqui outro link, se quiser (ex.: 'https://...')
+  secondaryLink: 'https://www.csrevo.com' // <- coloque aqui outro link, se quiser (ex.: 'https://...')
 };
 
 function init(app) {

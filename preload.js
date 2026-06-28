@@ -23,6 +23,12 @@ contextBridge.exposeInMainWorld('api', {
   clearGameExecutable: () => ipcRenderer.send('clear-game-executable'),
   openExternalLink: (url) => ipcRenderer.send('open-external-link', url),
 
-  getVersion: () => ipcRenderer.invoke('get-app-version')
-});
+  getVersion: () => ipcRenderer.invoke('get-app-version'),
 
+  // Anúncios: busca os dados do GitHub (ou cache local) e retorna a lista.
+  // Chamado pelo announcements.js na abertura e a cada 2 minutos.
+  getAnnouncements: () => ipcRenderer.invoke('get-announcements'),
+
+  // Abre qualquer URL de anúncio no navegador padrão do sistema.
+  openAnnouncementLink: (url) => ipcRenderer.send('open-announcement-link', url)
+});

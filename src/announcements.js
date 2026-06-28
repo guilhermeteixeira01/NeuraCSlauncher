@@ -1,142 +1,172 @@
-// ===== Anúncios / Notícias carregados do GitHub =====
-// O Dashboard (painel de admin) salva um announcements.json nesse
-// repositório. Aqui a gente busca esse JSON e troca os 3 cards estáticos
-// da home pelos anúncios reais marcados como "ativos".
-//
-// Se o fetch falhar por qualquer motivo (sem internet, repo/path errado,
-// JSON malformado), os cards estáticos que já estão no HTML continuam
-// visíveis — não tem tela quebrada, só não atualiza.
+// ===== Announcements =====
+// Carrega os anúncios via IPC (main process → GitHub ou fallback local)
+// assim que o launcher abre, e repete a cada 2 minutos automaticamente.
 
-const ANNOUNCEMENTS_CONFIG = {
-  owner: 'guilhermeteixeira01',
-  repo: 'NeuraCSlauncher',
-  branch: 'main',
-  // Ajuste aqui se o "path" configurado no Dashboard for diferente.
-  path: 'src/announcements.json',
-};
+(function () {
+  const GRID        = document.getElementById('news-grid');
+  const INTERVAL_MS = 2 * 10 * 1000; // 2 minutos
 
-// raw.githubusercontent.com não tem o delay de propagação do jsDelivr
-// (que cacheia por bastante tempo) — preferimos ele pra anúncio aparecer
-// rápido depois de salvo no Dashboard. jsDelivr fica só como plano B.
-function buildAnnouncementsUrls() {
-  const { owner, repo, branch, path } = ANNOUNCEMENTS_CONFIG;
-  return [
-    `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}?t=${Date.now()}`,
-    `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}`,
-  ];
-}
+  if (!GRID) return;
 
-async function fetchAnnouncementsJson() {
-  const urls = buildAnnouncementsUrls();
-  let lastErr;
-  for (const url of urls) {
+  // Mapa de cores/label por tipo
+  const TYPE_META = {
+    news:   { label: '📰 NOTÍCIA',     color: '#ff7a1a' },
+    update: { label: '🔄 ATUALIZAÇÃO', color: '#3ddc84' },
+    event:  { label: '📅 EVENTO',      color: '#e8b923' },
+    promo:  { label: '🎁 PROMOÇÃO',    color: '#a060ff' },
+  };
+
+  // ── Formatação de data ──────────────────────────────────────────────────
+  function formatDate(str) {
+    if (!str) return '';
     try {
-      const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status} em ${url}`);
-      return await res.json();
+      const [y, m, d] = str.split('-').map(Number);
+      return new Date(y, m - 1, d)
+        .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+        .toUpperCase();
+    } catch { return str; }
+  }
+
+  // ── Abre link via IPC (Electron) ou window.open (dev/browser) ──────────
+  function openLink(url) {
+    if (!url) return;
+    if (window.api && typeof window.api.openAnnouncementLink === 'function') {
+      window.api.openAnnouncementLink(url);
+    } else {
+      window.open(url, '_blank', 'noopener');
+    }
+  }
+
+  // ── Cria um card de anúncio ─────────────────────────────────────────────
+  function createCard(ann) {
+    const meta   = TYPE_META[ann.type] || TYPE_META.news;
+    const hasImg  = ann.image && ann.image.trim() !== '';
+    const hasLink = ann.link  && ann.link.trim()  !== '';
+
+    const article = document.createElement('article');
+    article.className = 'news-card ann-card';
+
+    // Thumbnail
+    const thumb = document.createElement('div');
+    thumb.className = 'news-thumb ann-thumb';
+    if (hasImg) {
+      thumb.classList.add('ann-has-img');
+      const img = document.createElement('img');
+      img.src       = ann.image;
+      img.alt       = ann.title;
+      img.className = 'ann-img';
+      img.onerror   = () => {
+        // se a imagem quebrar, colapsa o thumb
+        thumb.classList.remove('ann-has-img');
+      };
+      thumb.appendChild(img);
+    }
+    article.appendChild(thumb);
+
+    // Corpo
+    const body = document.createElement('div');
+    body.className = 'news-body ann-body';
+
+    // Badge de tipo + data
+    const metaLine = document.createElement('div');
+    metaLine.className = 'ann-meta-line';
+
+    const badge = document.createElement('span');
+    badge.className = `ann-badge ann-badge--${ann.type || 'news'}`;
+    badge.textContent = meta.label;
+
+    const dateEl = document.createElement('span');
+    dateEl.className = 'news-date';
+    dateEl.textContent = formatDate(ann.date);
+
+    metaLine.appendChild(badge);
+    metaLine.appendChild(dateEl);
+    body.appendChild(metaLine);
+
+    // Título
+    const h3 = document.createElement('h3');
+    h3.textContent = ann.title;
+    body.appendChild(h3);
+
+    // Descrição
+    if (ann.description) {
+      const p = document.createElement('p');
+      p.textContent = ann.description;
+      body.appendChild(p);
+    }
+
+    if (hasLink) {
+      const btn = document.createElement('button');
+      btn.className = 'ann-link-btn';
+      btn.title = 'Saiba mais';
+      btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2.3"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+        <polyline points="15 3 21 3 21 9"/>
+        <line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>`;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openLink(ann.link);
+      });
+      body.appendChild(btn);
+
+      // Clique no card inteiro também abre o link
+      article.style.cursor = 'pointer';
+      article.addEventListener('click', () => openLink(ann.link));
+    }
+
+    article.appendChild(body);
+    return article;
+  }
+
+  // ── Renderiza a lista de anúncios no grid ───────────────────────────────
+  let lastRenderedIds = ''; // evita re-render desnecessário se nada mudou
+
+  function render(announcements) {
+    const active = (announcements || []).filter(a => a.status === 'active');
+
+    // Assinatura inclui o conteúdo todo (não só os ids), pra detectar
+    // edições em anúncios que já existiam (ex: trocou o título/imagem
+    // mas o id continua o mesmo) e ainda assim disparar o re-render.
+    const signature = active
+      .map(a => [a.id, a.type, a.title, a.description, a.image, a.link, a.date].join('|'))
+      .join(',');
+    if (signature === lastRenderedIds) return; // nada mudou de verdade, não pisca
+    lastRenderedIds = signature;
+
+    if (active.length === 0) return; // mantém os cards estáticos como fallback
+
+    GRID.innerHTML = '';
+    active.forEach(ann => GRID.appendChild(createCard(ann)));
+  }
+
+  // ── Busca os anúncios ───────────────────────────────────────────────────
+  async function load() {
+    try {
+      let data;
+
+      if (window.api && typeof window.api.getAnnouncements === 'function') {
+        // Caminho principal: via IPC → main process → GitHub ou arquivo local
+        data = await window.api.getAnnouncements();
+      } else {
+        // Fallback para dev no navegador
+        const res = await fetch('./announcements.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        data = await res.json();
+      }
+
+      render(data?.announcements);
     } catch (err) {
-      lastErr = err;
-      console.warn('[Announcements] Falhou em', url, err.message);
+      console.warn('[Announcements] Falha ao carregar:', err.message || err);
     }
   }
-  throw lastErr || new Error('Nenhuma URL de anúncios respondeu.');
-}
 
-function escapeHtml(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+  // ── Inicializa ──────────────────────────────────────────────────────────
+  // Carregamento imediato ao abrir o launcher
+  load();
 
-const MESES_PT = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-
-function formatDate(isoDate) {
-  if (!isoDate) return '';
-  const d = new Date(isoDate + 'T00:00:00');
-  if (Number.isNaN(d.getTime())) return isoDate;
-  return `${String(d.getDate()).padStart(2, '0')} ${MESES_PT[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-// Reaproveita as classes de cor (thumb-map / thumb-season / thumb-weapon)
-// que já existem no style.css pros cards estáticos, só pra dar uma
-// variação visual de acordo com o tipo do anúncio.
-const THUMB_BY_TYPE = {
-  news: 'thumb-map',
-  update: 'thumb-season',
-  event: 'thumb-weapon',
-};
-
-// Mesmas cores do badge "tipo" do Dashboard (.ann-type) — mas em vez de
-// emoji (que fica com peso/alinhamento inconsistente entre Windows/Mac),
-// usa o mesmo padrão visual de "bolinha colorida + texto" que o próprio
-// style.css já usa em .status-dot (lista de amigos), pra ficar nativo
-// do app em vez de algo "colado por fora".
-const TYPE_BADGE = {
-  news:   { label: 'NOTÍCIA',     color: '#ff7a1a' },
-  update: { label: 'ATUALIZAÇÃO', color: '#3ddc84' },
-  event:  { label: 'EVENTO',      color: '#e8b923' },
-  promo:  { label: 'PROMOÇÃO',    color: '#b080ff' },
-};
-
-function renderTypeBadge(type) {
-  const t = TYPE_BADGE[type] || TYPE_BADGE.news;
-  return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:.6px;color:${t.color};text-transform:uppercase;line-height:1">
-    <span style="width:6px;height:6px;border-radius:50%;background:${t.color};box-shadow:0 0 6px ${t.color}80;flex-shrink:0"></span>${t.label}
-  </span>`;
-}
-
-function renderCard(a) {
-  const thumbClass = THUMB_BY_TYPE[a.type] || 'thumb-map';
-  // Se vier uma imagem, usa ela. Se a URL falhar ao carregar (link quebrado,
-  // imagem removida, etc), o onerror troca pra cor sólida sem deixar buraco.
-  const thumbHtml = a.image
-    ? `<img src="${escapeHtml(a.image)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.replaceWith(Object.assign(document.createElement('div'), { className: 'news-thumb ${thumbClass}' }))"/>`
-    : '';
-
-  return `
-    <article class="news-card">
-      <div class="news-thumb ${a.image ? '' : thumbClass}">${thumbHtml}</div>
-      <div class="news-body">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          ${renderTypeBadge(a.type)}
-          <span class="news-date" style="margin:0">${escapeHtml(formatDate(a.date))}</span>
-        </div>
-        <h3 style="margin:0 0 4px">${escapeHtml(a.title)}</h3>
-        <p>${escapeHtml(a.description)}</p>
-      </div>
-    </article>`;
-}
-
-async function loadAnnouncements() {
-  const grid = document.getElementById('news-grid');
-  if (!grid) return;
-
-  try {
-    const data = await fetchAnnouncementsJson();
-    const items = (data.announcements || [])
-      .filter((a) => a.status === 'active')
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 3);
-
-    if (items.length === 0) {
-      console.log('[Announcements] JSON carregado, mas sem anúncios ativos — mantendo cards padrão.');
-      return;
-    }
-
-    grid.innerHTML = items.map(renderCard).join('');
-    console.log(`[Announcements] ${items.length} anúncio(s) carregado(s) do GitHub.`);
-  } catch (err) {
-    console.error('[Announcements] Não foi possível carregar os anúncios, mantendo cards padrão:', err);
-  }
-}
-
-loadAnnouncements();
-
-// Recarrega sozinho a cada 5 minutos, sem precisar reabrir o launcher —
-// garante que um anúncio novo apareça pro cliente mesmo que ele deixe o
-// launcher aberto em segundo plano por um tempão.
-const ANNOUNCEMENTS_REFRESH_MS = 5 * 60 * 1000;
-setInterval(loadAnnouncements, ANNOUNCEMENTS_REFRESH_MS);
+  // Refresh automático a cada 2 minutos
+  setInterval(load, INTERVAL_MS);
+})();

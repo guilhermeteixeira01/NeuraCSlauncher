@@ -79,7 +79,7 @@ function send(channel, payload) {
 function checkForUpdates() {
   // Evita erro feio em modo dev (sem app empacotado / sem release publicado)
   if (!app.isPackaged) {
-    console.log('[AutoUpdate] Ignorado: app não está empacotado (modo dev).');
+    console.log('[AutoUpdate] Ignorado: app nao esta empacotado (modo dev).');
     return;
   }
   autoUpdater.checkForUpdates().catch((err) => {

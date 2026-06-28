@@ -216,6 +216,19 @@ html,body{
   font-size:12px;
   color:var(--text-dim);
 }
+.copyright{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size:11px;
+  color:var(--text-dim);
+  gap: 4px;
+
+  & a {
+    color: var(--orange);
+    text-decoration: none;
+  }
+}
 
 /* ===== Main content ===== */
 .main{
@@ -232,13 +245,25 @@ html,body{
   position:relative;
   overflow:hidden;
   height:420px;
-  /* background-image: url('https://4kwallpapers.com/images/wallpapers/counter-strike--9192.png') */;
   background-repeat: no-repeat;
   background-size: 100%;
   background-position: center;
   display:flex;
   align-items:flex-end;
   animation: heroimgs 30s infinite;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45); /* Ajuste a opacidade aqui */
+  z-index: 1;
+}
+
+/* Faz o conteúdo ficar acima da camada escura */
+.hero > * {
+  position: relative;
+  z-index: 2;
 }
 
 @keyframes heroimgs {
@@ -270,7 +295,7 @@ html,body{
 }
 .hero-sub{
   margin-top:14px;
-  color:#d7d7da;
+  color: var(--orange);
   font-size:14px;
   font-weight:600;
   letter-spacing:0.5px;
@@ -493,6 +518,7 @@ html,body{
   display:grid;
   grid-template-columns: repeat(3, 1fr);
   gap:16px;
+  align-items:stretch;
 }
 .news-card{
   background: linear-gradient(145deg,#181920 0%,#101215 100%);
@@ -503,21 +529,22 @@ html,body{
   position:relative;
   transition: transform .15s, border-color .15s, box-shadow .15s;
 }
-.news-card::before{
+/* .news-card::before{
   content:'';
   position:absolute;
   top:0; left:0;
-  width:24px; height:2px;
+  width:32px; height:2px;
   background: linear-gradient(90deg, var(--orange), transparent);
-  z-index:1;
-}
+} */
 .news-card:hover{ transform:translateY(-3px); border-color:#ff7a1a33; box-shadow: 0 6px 20px -6px rgba(255,122,26,.2); }
 .news-thumb{ height:110px; }
+.ann-thumb{ height:0 !important; }
+.ann-thumb.ann-has-img{ height:110px !important; }
 .thumb-map{ background: linear-gradient(135deg,#2c3a4a,#10151c); }
 .thumb-season{ background: linear-gradient(135deg,#3a2c10,#15110a); }
 .thumb-weapon{ background: linear-gradient(135deg,#163a4a,#0a141c); }
 .news-body{ padding:14px 16px; }
-.news-date{ font-size:11px; color:var(--text-dim); }
+.news-date{ font-size:11px; color:var(--text-dim); white-space:nowrap; flex-shrink:0; }
 .news-body h3{ font-size:14px; margin:6px 0 4px; }
 .news-body p{ font-size:12px; color:var(--text-dim); line-height:1.4; }
 
@@ -710,3 +737,114 @@ html,body{
 }
 @keyframes spin{ to{ transform: rotate(360deg); } }
 #launch-text{ font-size:13px; color:#ddd; letter-spacing:.5px; }
+
+/* ===== Announcement cards (injetados pelo announcements.js) ===== */
+
+/* o grid precisa de stretch pra todos os cards terem a mesma altura */
+.news-grid{ align-items: stretch; }
+
+/* card base — flex column pra o footer grudar no fundo */
+.news-card.ann-card{
+  display: flex;
+  flex-direction: column;
+}
+
+/* thumbnail: altura controlada pelas regras acima com !important */
+.ann-thumb{
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.ann-thumb.ann-has-img{
+  background: linear-gradient(135deg,#1e202a,#10101c);
+}
+.ann-img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+  display: block;
+  transition: transform .3s ease;
+}
+.news-card:hover .ann-img{ transform: scale(1.04); }
+
+/* corpo: flex-column + flex:1 faz ele ocupar todo o espaço disponível */
+.ann-body{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 12px;
+}
+
+/* linha badge + data */
+.ann-meta-line{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: nowrap;     /* nunca quebra em duas linhas */
+  min-width: 0;          /* permite truncar em vez de empurrar o layout */
+}
+
+/* badges por tipo */
+.ann-badge{
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;        /* badge nunca encolhe/quebra texto */
+}
+.ann-badge.ann-badge--news  { background:rgba(255,122,26,.15); color:#ff7a1a; border:1px solid rgba(255,122,26,.3); }
+.ann-badge.ann-badge--update{ background:rgba(61,220,132,.12);  color:#3ddc84; border:1px solid rgba(61,220,132,.3); }
+.ann-badge.ann-badge--event { background:rgba(232,185,35,.12);  color:#e8b923; border:1px solid rgba(232,185,35,.3); }
+.ann-badge.ann-badge--promo { background:rgba(160,96,255,.12);  color:#b080ff; border:1px solid rgba(160,96,255,.3); }
+
+.ann-body h3{
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 3px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ann-body p{
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* footer: margin-top:auto empurra ele pro fundo independente do conteúdo */
+/* botão ícone */
+.ann-link-btn{
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--orange);
+  background: var(--panel-2);
+  border: 1px solid rgba(255, 121, 26, 0.697);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+  -webkit-app-region: no-drag;
+}
+.ann-link-btn:hover{
+  background: var(--panel-2);
+  border-color: rgba(255,122,26,.6);
+  color: #ff9a3c;
+}

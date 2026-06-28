@@ -116,6 +116,21 @@ lomLinkSecondary.addEventListener('click', (e) => {
 });
 
 // ===== Detecção automática (Steam ou caminho manual) do CS 1.6 =====
+// Guarda a última fonte detectada (steam / manual / auto-scan) pra poder
+// remontar o texto certo depois — ex.: quando o jogo fecha e o botão volta
+// ao estado normal, sem precisar esperar um novo evento de detecção.
+let lastDetectedSource = null;
+
+// "STEAM" só aparece no texto quando o jogo foi achado de fato na Steam.
+// Caminho manual e a varredura automática (achou fora da Steam, tipo um
+// repack em "C:\Jogos\...") não têm relação com a Steam, então não podem
+// dar a entender que vieram dela.
+function getLaunchOptionText(source) {
+  if (source === 'manual') return 'EXECUTÁVEL CONFIGURADO MANUALMENTE';
+  if (source === 'auto-scan') return 'NOSTEAM - COUNTER-STRIKE 1.6 DETECTADO';
+  return 'STEAM — COUNTER-STRIKE 1.6 DETECTADO'; // source === 'steam'
+}
+
 // Enquanto a checagem roda (lá no main process), o botão fica em estado
 // "verificando" — desabilitado, com spinner e texto cinza. Quando o
 // resultado chega, ele libera: verde se achou o jogo (qualquer fonte),
@@ -127,14 +142,13 @@ window.api.onGameDetected((data) => {
   btnPlayLabel.textContent = 'JOGAR';
 
   if (data.detected) {
+    lastDetectedSource = data.source;
     btnPlay.classList.add('steam-ready');
     btnOptions.classList.remove('hidden');
     btnOptions.classList.add('steam-selected');
     noGamePanel.classList.add('hidden');
 
-    launchOptionText.textContent = data.source === 'manual'
-      ? 'EXECUTÁVEL CONFIGURADO MANUALMENTE'
-      : 'STEAM — COUNTER-STRIKE 1.6 DETECTADO';
+    launchOptionText.textContent = getLaunchOptionText(data.source);
   } else {
     btnPlay.classList.remove('steam-ready');
     btnOptions.classList.add('hidden');
@@ -151,7 +165,7 @@ window.api.onGameDetected((data) => {
     }
     if (links.secondary) {
       lomLinkSecondary.dataset.url = links.secondary;
-      lomLinkSecondary.textContent = 'Outro link ↗';
+      lomLinkSecondary.textContent = 'Baixar Versão Gratis ↗';
       lomLinkSecondary.classList.remove('hidden');
     } else {
       lomLinkSecondary.classList.add('hidden');
@@ -177,7 +191,7 @@ window.api.onGameStatus((data) => {
     btnPlay.classList.add('steam-ready');
     btnPlayArrow.classList.remove('hidden-arrow');
     btnPlayLabel.textContent = 'JOGAR';
-    launchOptionText.textContent = 'STEAM — COUNTER-STRIKE 1.6 DETECTADO';
+    launchOptionText.textContent = getLaunchOptionText(lastDetectedSource);
   }
 });
 

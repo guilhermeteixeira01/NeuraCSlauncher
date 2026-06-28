@@ -1157,7 +1157,7 @@ async function saveToGitHub() {
     if (!res.ok) throw new Error(`GitHub API: ${res.status} ${res.statusText}`);
     const data = await res.json();
     ghSha = data.content?.sha || null;
-    toast('✓ Salvo no GitHub com sucesso!', 'success');
+    toast('Salvo no GitHub com sucesso!', 'success');
   } catch (err) {
     console.error(err);
     toast(`Erro: ${err.message}`, 'error');

@@ -31,10 +31,11 @@ if (!app.isPackaged) {
   }
 }
 
-// Combina a detecção automática da Steam com um caminho manual que o
-// usuário possa ter configurado nas opções de inicialização. A Steam
-// continua tendo prioridade quando os dois existem (é a fonte mais
-// confiável); o manual só entra em ação se a Steam não achou nada.
+// Combina a detecção automática da Steam, um caminho manual configurado
+// pelo usuário, e — se nenhum dos dois achar nada — uma varredura de
+// pastas comuns do disco (pra pegar repacks/clientes não-Steam, tipo
+// "C:\Jogos\CS Revo\CS 1.6 2.4", sem o usuário precisar selecionar na mão).
+// Prioridade: Steam > manual salvo > varredura automática.
 function resolveCs16Info() {
   const steamResult = steamDetect.detectCS16();
   if (steamResult.detected) {
@@ -42,18 +43,41 @@ function resolveCs16Info() {
   }
 
   const manualPath = launchConfig.getCustomGamePath();
-  if (manualPath && fs.existsSync(manualPath)) {
+  if (manualPath) {
+    const validation = steamDetect.validateManualPath(manualPath);
+    if (validation.valid) {
+      return {
+        detected: true,
+        source: 'manual',
+        exePath: validation.exePath,
+        installPath: path.dirname(validation.exePath)
+      };
+    }
+
+    // Caminho salvo não existe mais OU não é o CS 1.6 (ex.: usuário trocou
+    // de jogo, moveu a pasta, ou a validação ficou mais estrita depois).
+    // Em ambos os casos não dá pra confiar nele — limpa a config.
+    console.warn('[CS16] Caminho manual configurado é inválido:', validation.reason);
+    launchConfig.clearCustomGamePath();
+  }
+
+  // Nem Steam nem caminho manual — varre locais comuns do disco antes de
+  // desistir. É limitada (tempo/profundidade, ver steam-detect.js) então
+  // não trava o app, mas pode levar alguns segundos na primeira vez.
+  console.log('[CS16] Steam e caminho manual não acharam nada — iniciando varredura automática...');
+  const scanResult = steamDetect.scanCommonLocations();
+  if (scanResult.found) {
+    console.log('[CS16] Varredura automática encontrou o jogo em:', scanResult.exePath);
+    // Salva como caminho manual pra não precisar varrer o disco de novo
+    // a cada vez que o launcher abrir — a próxima checagem cai direto no
+    // bloco de "caminho manual" acima, que é instantâneo.
+    launchConfig.setCustomGamePath(scanResult.exePath);
     return {
       detected: true,
-      source: 'manual',
-      exePath: manualPath,
-      installPath: path.dirname(manualPath)
+      source: 'auto-scan',
+      exePath: scanResult.exePath,
+      installPath: scanResult.gameDir
     };
-  }
-  if (manualPath && !fs.existsSync(manualPath)) {
-    // O arquivo que o usuário escolheu não existe mais (foi movido/apagado) —
-    // limpa a config pra não ficar reportando um caminho morto.
-    launchConfig.clearCustomGamePath();
   }
 
   return { detected: false, reason: steamResult.reason || 'app-not-installed' };
@@ -91,6 +115,16 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+
+  // Sempre que o conteúdo da janela termina de carregar — incluindo
+  // recargas de desenvolvimento via electron-reload, não só o boot inicial —
+  // manda o estado atual de detecção de novo. Sem isso, um reload no meio
+  // do uso deixa o botão "JOGAR" preso pra sempre em "verificando...",
+  // porque os listeners antigos do renderer morreram junto com a página
+  // e ninguém avisa a página nova do que já tinha sido detectado.
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('game-detected', { ...cs16Info, links: launchConfig.getLinks() });
+  });
 
   // Avisa a renderer quando o estado maximizado muda (inclusive via
   // duplo-clique na barra ou atalhos do sistema, não só pelo nosso botão),
@@ -482,10 +516,124 @@ function startWatchingGameProcess(processName) {
 
 ipcMain.handle('get-app-version', () => app.getVersion());
 
+// ===== Anúncios =====
+// Config do GitHub hardcodada — o painel admin roda no navegador (GitHub Pages)
+// e não tem como escrever no userData do Electron, então a config fica aqui.
+// Repositório: guilhermeteixeira01/NeuraCSLauncher
+// Token opcional para repos públicos; adicione se o repo for privado.
+const ANNOUNCEMENTS_GH_CONFIG = {
+  owner:  'guilhermeteixeira01',
+  repo:   'NeuraCSLauncher',
+  path:   'src/announcements.json',
+  branch: 'main',
+  token:  '',
+};
+
+let announcementsCache = null;
+let announcementsCacheTime = 0;
+const ANNOUNCEMENTS_CACHE_TTL = 2 * 60 * 1000;
+
+async function fetchAnnouncementsFromGitHub(cfg) {
+  const { net } = require('electron');
+  const ghPath = cfg.path || 'announcements.json';
+  const branch = cfg.branch || 'main';
+  const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${ghPath}?ref=${branch}`;
+
+  return new Promise((resolve, reject) => {
+    const req = net.request({
+      method: 'GET', url,
+      headers: {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'NeuraCS-Launcher',
+        ...(cfg.token ? { 'Authorization': `token ${cfg.token}` } : {})
+      }
+    });
+    let body = '';
+    req.on('response', (res) => {
+      res.on('data', (chunk) => { body += chunk.toString(); });
+      res.on('end', () => {
+        try {
+          if (res.statusCode !== 200) { reject(new Error(`GitHub API: ${res.statusCode}`)); return; }
+          const d = JSON.parse(body);
+          const decoded = Buffer.from(d.content.replace(/\n/g, ''), 'base64').toString('utf8');
+          resolve(JSON.parse(decoded));
+        } catch (e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+ipcMain.handle('get-announcements', async () => {
+  const now = Date.now();
+  if (announcementsCache && (now - announcementsCacheTime) < ANNOUNCEMENTS_CACHE_TTL) {
+    return announcementsCache;
+  }
+
+  const cfg = ANNOUNCEMENTS_GH_CONFIG;
+  if (cfg.owner && cfg.repo) {
+    try {
+      const data = await fetchAnnouncementsFromGitHub(cfg);
+      announcementsCache = data;
+      announcementsCacheTime = now;
+      console.log(`[Announcements] ${data.announcements?.length ?? 0} anuncio(s) carregado(s) do GitHub.`);
+      return data;
+    } catch (err) {
+      console.warn('[Announcements] Falha no GitHub, usando fallback local:', err.message);
+    }
+  }
+
+  try {
+    const localPath = path.join(__dirname, 'src', 'announcements.json');
+    if (fs.existsSync(localPath)) {
+      const data = JSON.parse(fs.readFileSync(localPath, 'utf8'));
+      announcementsCache = data;
+      announcementsCacheTime = now;
+      return data;
+    }
+  } catch (err) {
+    console.warn('[Announcements] Erro ao ler arquivo local:', err.message);
+  }
+
+  return { announcements: [] };
+});
+
+// Abre links de anúncios no navegador (sem allowlist, pois o conteúdo é
+// controlado pelo admin do painel — config hardcodada em ANNOUNCEMENTS_GH_CONFIG).
+ipcMain.on('open-announcement-link', (event, url) => {
+  if (!url || typeof url !== 'string') return;
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    console.warn('[Announcements] URL rejeitada (não é http/https):', url);
+    return;
+  }
+  shell.openExternal(url).catch((err) => {
+    console.error('[Announcements] Erro ao abrir link:', err);
+  });
+});
+
 // Abre o diálogo nativo de "escolher arquivo" pra o usuário apontar um
 // executável do jogo (qualquer instalação que a detecção automática da
 // Steam não tenha encontrado). Salva o caminho escolhido e refaz a
 // detecção, avisando a tela de opções do novo estado.
+// Traduz o "reason" técnico do steam-detect.js numa mensagem que faça
+// sentido pra quem não programa, pra mostrar na caixa de mensagem nativa.
+function describeRejection(reason) {
+  const messages = {
+    'file-not-found': 'O arquivo selecionado não foi encontrado.',
+    'not-a-file': 'O caminho selecionado não é um arquivo.',
+    'wrong-executable-name': 'Esse não é o executável do Counter-Strike 1.6 (hl.exe). Você selecionou outro jogo ou programa.',
+    'cstrike-folder-missing': 'A pasta do jogo não tem a estrutura do Counter-Strike 1.6 (faltando a pasta "cstrike"). Verifique se escolheu o executável correto.',
+    'liblist-missing': 'A pasta do jogo está incompleta (faltando arquivos do CS 1.6). Tente reinstalar ou verificar a integridade dos arquivos pela Steam.',
+    'liblist-unreadable': 'Não foi possível ler os arquivos do jogo pra confirmar que é o CS 1.6.',
+    'not-counter-strike': 'Esse executável pertence a outro jogo (não é o Counter-Strike 1.6).',
+    'invalid-path': 'Caminho inválido.',
+    'empty-path': 'Nenhum caminho foi selecionado.',
+    'validation-error': 'Ocorreu um erro inesperado ao validar o executável.'
+  };
+  return messages[reason] || 'O executável selecionado não é o Counter-Strike 1.6.';
+}
+
 ipcMain.handle('browse-game-executable', async () => {
   const filters = process.platform === 'win32'
     ? [{ name: 'Executável', extensions: ['exe'] }]
@@ -502,9 +650,28 @@ ipcMain.handle('browse-game-executable', async () => {
   }
 
   const chosenPath = result.filePaths[0];
-  launchConfig.setCustomGamePath(chosenPath);
+
+  // Valida ANTES de salvar — não basta o usuário ter escolhido um .exe
+  // qualquer (o filtro do diálogo aceita qualquer .exe no Windows), ele
+  // precisa ser o hl.exe/hl da pasta certa do CS 1.6 (ver steam-detect.js).
+  const validation = steamDetect.validateManualPath(chosenPath);
+  if (!validation.valid) {
+    console.warn('[browse-game-executable] Executável rejeitado:', chosenPath, validation.reason);
+
+    await dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      title: 'Executável inválido',
+      message: 'Não foi possível usar o arquivo selecionado',
+      detail: describeRejection(validation.reason),
+      buttons: ['OK']
+    });
+
+    return { canceled: false, rejected: true, reason: validation.reason, path: chosenPath };
+  }
+
+  launchConfig.setCustomGamePath(validation.exePath);
   const updated = refreshAndBroadcastDetection();
-  return { canceled: false, path: chosenPath, info: updated };
+  return { canceled: false, path: validation.exePath, info: updated };
 });
 
 // Esquece o caminho manual configurado (ex.: usuário quer escolher outro,
