@@ -1,13 +1,43 @@
 {
   "announcements": [
     {
-      "id": "mqsrvpjsl56gv",
-      "title": "TESTE",
-      "description": "teste de sistema de Anuncio",
-      "image": "https://i.pinimg.com/736x/3e/1e/7f/3e1e7fcc620ee3d796e416ad0f003e7e.jpg",
+      "id": "mqxvp7mtg8e93",
+      "title": "Veja os próximos grandes compromissos das equipes brasileira",
+      "description": "O Brasil já tem equipes confirmadas em quatro torneios de alto nível para as próximas semanas, a começar pela Stake Ranked Episode 3.",
+      "image": "https://static.draft5.gg/news/2026/06/20123827/FalleN-FURIA-IEM-Cologne-Major-2026-2.jpg",
       "type": "news",
+      "date": "2026-06-28",
+      "link": "https://draft5.gg/noticia/veja-os-proximos-compromissos-das-equipes-brasileiras-no-exterior",
+      "status": "active"
+    },
+    {
+      "id": "mqxvoeiwno2zc",
+      "title": "Os melhores kits de faca e luva no CS2 por menos de R$1 mil",
+      "description": "Montar um bom combo de faca e luva no Counter-Strike 2 nem sempre significa gastar valores absurdos. Mesmo dentro de um orçamento mais limitado.",
+      "image": "https://static.draft5.gg/news/2026/06/26181851/Bayonet-Rust-Coat-Duct-Tape.jpg",
+      "type": "news",
+      "date": "2026-06-28",
+      "link": "https://draft5.gg/noticia/os-melhores-kits-de-faca-e-luva-no-cs2-por-menos-de-r1-mil",
+      "status": "active"
+    },
+    {
+      "id": "mqxvl55l4i09w",
+      "title": "Falcons bate a FURIA e é campeã do IEM Cologne Major 2026",
+      "description": "A Falcons conquistou seu primeiro Major. A equipe de Nikola \"NiKo\" Kovač venceu a FURIA por 3 a 0 na grande final do IEM Cologne Major e conquistou o título.",
+      "image": "https://img-cdn.hltv.org/gallerypicture/MROEmoGam231pzqNmdFPEf.jpg?ixlib=java-2.1.0&w=1200&s=39d9344aa85b9be675d668eb74d089b8",
+      "type": "news",
+      "date": "2026-06-28",
+      "link": "https://www.dust2.com.br/noticias/75246/falcons-bate-a-furia-e-e-campea-do-iem-cologne-major-2026",
+      "status": "active"
+    },
+    {
+      "id": "mqst00f6n0zqj",
+      "title": "Neura Bots",
+      "description": "Venha contratar Bots automatizados para seu Discord !!",
+      "image": "https://i.imgur.com/gkdwiuw.gif",
+      "type": "promo",
       "date": "2026-06-25",
-      "link": null,
+      "link": "https://neurabot.com.br",
       "status": "active"
     }
   ]
