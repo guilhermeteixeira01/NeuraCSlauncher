@@ -3,10 +3,12 @@
 // assim que o launcher abre, e repete a cada 2 minutos automaticamente.
 
 (function () {
-  const GRID        = document.getElementById('news-grid');
+  const GRID        = document.getElementById('news-grid');       // INÍCIO (limitado)
+  const GRID_FULL   = document.getElementById('news-grid-full');   // NOTÍCIAS (sem limite)
+  const MAIN_LIMIT  = 3; // quantos anúncios aparecem na página inicial
   const INTERVAL_MS = 2 * 10 * 1000; // 2 minutos
 
-  if (!GRID) return;
+  if (!GRID && !GRID_FULL) return;
 
   // Mapa de cores/label por tipo
   const TYPE_META = {
@@ -81,6 +83,15 @@
 
     metaLine.appendChild(badge);
     metaLine.appendChild(dateEl);
+
+    if (ann.priority) {
+      const priorityEl = document.createElement('span');
+      priorityEl.className = 'ann-badge';
+      priorityEl.style.color = '#ff7a1a';
+      priorityEl.textContent = ann.priority >= 2 ? '🔥 URGENTE' : '⭐ ALTA';
+      metaLine.appendChild(priorityEl);
+    }
+
     body.appendChild(metaLine);
 
     // Título
@@ -121,25 +132,49 @@
     return article;
   }
 
-  // ── Renderiza a lista de anúncios no grid ───────────────────────────────
-  let lastRenderedIds = ''; // evita re-render desnecessário se nada mudou
+  // ── Renderiza a lista de anúncios nos grids ─────────────────────────────
+  // Guarda uma "assinatura" do conteúdo por grid pra não re-renderizar (e
+  // não piscar) quando nada mudou de verdade entre uma busca e outra.
+  const lastSignatures = { main: '', full: '' };
 
-  function render(announcements) {
-    const active = (announcements || []).filter(a => a.status === 'active');
-
-    // Assinatura inclui o conteúdo todo (não só os ids), pra detectar
-    // edições em anúncios que já existiam (ex: trocou o título/imagem
-    // mas o id continua o mesmo) e ainda assim disparar o re-render.
-    const signature = active
+  function computeSignature(list) {
+    return list
       .map(a => [a.id, a.type, a.title, a.description, a.image, a.link, a.date].join('|'))
       .join(',');
-    if (signature === lastRenderedIds) return; // nada mudou de verdade, não pisca
-    lastRenderedIds = signature;
+  }
 
-    if (active.length === 0) return; // mantém os cards estáticos como fallback
+  function renderInto(grid, list, key) {
+    if (!grid) return;
+    const signature = computeSignature(list);
+    if (signature === lastSignatures[key]) return; // nada mudou de verdade
+    lastSignatures[key] = signature;
 
-    GRID.innerHTML = '';
-    active.forEach(ann => GRID.appendChild(createCard(ann)));
+    if (list.length === 0) return; // mantém os cards estáticos como fallback
+
+    grid.innerHTML = '';
+    list.forEach(ann => grid.appendChild(createCard(ann)));
+  }
+
+  // Prioridade maior primeiro (campo "priority": 0 = normal, 1 = alta,
+  // 2 = urgente, definido no painel admin). Em caso de empate, o mais
+  // recente (por data) vem na frente.
+  function sortByPriorityThenDate(list) {
+    return [...list].sort((a, b) => {
+      const pa = a.priority || 0, pb = b.priority || 0;
+      if (pb !== pa) return pb - pa;
+      const da = a.date ? new Date(a.date).getTime() : 0;
+      const db = b.date ? new Date(b.date).getTime() : 0;
+      return db - da;
+    });
+  }
+
+  function render(announcements) {
+    const active = sortByPriorityThenDate((announcements || []).filter(a => a.status === 'active'));
+
+    // Página inicial: só os 3 mais recentes/prioritários.
+    renderInto(GRID, active.slice(0, MAIN_LIMIT), 'main');
+    // Aba de notícias: lista completa, sem limite.
+    renderInto(GRID_FULL, active, 'full');
   }
 
   // ── Busca os anúncios ───────────────────────────────────────────────────

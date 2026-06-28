@@ -16,15 +16,60 @@ window.api.onWindowState((data) => {
   windowFrame.classList.toggle('maximized', data.maximized);
 });
 
-// ===== Sidebar navigation (visual state only — plug in real views as needed) =====
-const navItems = document.querySelectorAll('.nav-item');
+// ===== Sidebar navigation =====
+// Cada item do menu tem um data-view (ex: "inicio", "noticias"...) e cada
+// bloco de conteúdo principal (em index.html) tem a mesma marcação em
+// data-view, dentro de um elemento com a classe "view". Ao clicar num item
+// do menu, escondemos todas as views e mostramos só a que corresponde —
+// assim só o conteúdo referente ao item clicado é renderizado na tela.
+const navItems = document.querySelectorAll('.nav-item[data-view]');
+const views = document.querySelectorAll('.view[data-view]');
+
+function showView(viewName) {
+  views.forEach((view) => {
+    view.classList.toggle('hidden', view.dataset.view !== viewName);
+  });
+}
+
 navItems.forEach(item => {
   item.addEventListener('click', (e) => {
     e.preventDefault();
+    const viewName = item.dataset.view;
+
     navItems.forEach(i => i.classList.remove('active'));
     item.classList.add('active');
+
+    // Se não existir uma view com esse nome no HTML, não faz nada
+    // (evita tela em branco por engano de digitação no data-view).
+    const hasMatchingView = Array.from(views).some(v => v.dataset.view === viewName);
+    if (hasMatchingView) showView(viewName);
   });
 });
+
+// Renderiza a view inicial de acordo com o item que já está marcado
+// como "active" no HTML (fallback: "inicio").
+const initialNavItem = document.querySelector('.nav-item.active[data-view]');
+showView(initialNavItem ? initialNavItem.dataset.view : 'inicio');
+
+// ===== Link "VER TODAS" (notícias da página inicial) =====
+// Clicar nele deve funcionar como clicar em "NOTÍCIAS" no menu lateral:
+// troca a view e marca o item certo como ativo no menu.
+function goToView(viewName) {
+  const targetNavItem = Array.from(navItems).find(i => i.dataset.view === viewName);
+  if (targetNavItem) {
+    targetNavItem.click(); // reaproveita o handler do clique do menu
+  } else {
+    showView(viewName); // fallback: troca a view mesmo sem item correspondente no menu
+  }
+}
+
+const verTodasNoticias = document.getElementById('ver-todas-noticias');
+if (verTodasNoticias) {
+  verTodasNoticias.addEventListener('click', (e) => {
+    e.preventDefault();
+    goToView('noticias');
+  });
+}
 
 // ===== Play button =====
 const overlay = document.getElementById('launch-overlay');

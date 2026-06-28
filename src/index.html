@@ -4,6 +4,12 @@
 <meta charset="UTF-8" />
 <title>Neura CS Launcher</title>
 <link rel="stylesheet" href="style.css" />
+<style>
+  /* Garante a troca de view independente de como .hidden é definido no
+     style.css (lá pode ser uma classe escopada por componente, e não um
+     utilitário genérico). Sem isso, todas as views ficam visíveis juntas. */
+  .view.hidden { display: none !important; }
+</style>
 </head>
 <body>
 
@@ -181,6 +187,9 @@
     <!-- Main content -->
     <main class="main">
 
+      <!-- ===== VIEW: INÍCIO ===== -->
+      <div class="view" data-view="inicio" id="view-inicio">
+
       <section class="hero">
         <div class="hero-bg">
           <svg viewBox="0 0 1000 600" preserveAspectRatio="xMaxYMid slice" class="hero-art">
@@ -259,7 +268,7 @@
       <section class="news">
         <div class="news-header">
           <h2>ÚLTIMAS NOTÍCIAS</h2>
-          <a href="#" class="ver-todas">VER TODAS →</a>
+          <a href="#" class="ver-todas" id="ver-todas-noticias">VER TODAS →</a>
         </div>
 
         <div class="news-grid" id="news-grid">
@@ -465,6 +474,44 @@
   </button>
 
 </section>
+
+      </div>
+      <!-- ===== FIM VIEW: INÍCIO ===== -->
+
+      <!-- ===== VIEW: NOTÍCIAS ===== -->
+      <div class="view hidden" data-view="noticias" id="view-noticias">
+        <section class="news">
+          <div class="news-header">
+            <h2>NOTÍCIAS</h2>
+          </div>
+          <div class="news-grid" id="news-grid-full">
+            <!-- TODO: renderizar aqui a lista completa de notícias -->
+          </div>
+        </section>
+      </div>
+      <!-- ===== FIM VIEW: NOTÍCIAS ===== -->
+
+      <!-- ===== VIEW: SERVIDORES ===== -->
+      <div class="view hidden" data-view="servidores" id="view-servidores">
+        <section class="news">
+          <div class="news-header">
+            <h2>SERVIDORES</h2>
+          </div>
+          <!-- TODO: renderizar aqui a lista de servidores -->
+        </section>
+      </div>
+      <!-- ===== FIM VIEW: SERVIDORES ===== -->
+
+      <!-- ===== VIEW: LOJA ===== -->
+      <div class="view hidden" data-view="loja" id="view-loja">
+        <section class="news">
+          <div class="news-header">
+            <h2>LOJA</h2>
+          </div>
+          <!-- TODO: renderizar aqui os itens da loja -->
+        </section>
+      </div>
+      <!-- ===== FIM VIEW: LOJA ===== -->
 
     </main>
 

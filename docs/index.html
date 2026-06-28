@@ -721,6 +721,17 @@
           <option value="inactive">⏸ Inativo</option>
         </select>
       </div>
+      <div class="form-group full">
+        <label>Prioridade</label>
+        <select id="f-priority">
+          <option value="0">Normal</option>
+          <option value="1">Alta</option>
+          <option value="2">Urgente</option>
+        </select>
+        <p style="font-size:11px;color:var(--dim);margin-top:4px">
+          Anúncios com prioridade maior aparecem primeiro (na página inicial do launcher e na aba de notícias). Em caso de empate, o mais recente vem na frente.
+        </p>
+      </div>
     </div>
     <div class="form-actions">
       <button class="btn-cancel" id="modal-cancel">Cancelar</button>
@@ -841,6 +852,14 @@ function render() {
     return matchSearch && matchType && matchStatus;
   });
 
+  // Prioridade maior primeiro; em caso de empate, data mais recente primeiro
+  // — mesma regra usada no launcher pra decidir o que aparece na frente.
+  list = list.slice().sort((a, b) => {
+    const pa = a.priority || 0, pb = b.priority || 0;
+    if (pb !== pa) return pb - pa;
+    return (b.date || '').localeCompare(a.date || '');
+  });
+
   // stats
   document.getElementById('stat-total').textContent    = announcements.length;
   document.getElementById('stat-active').textContent   = announcements.filter(a => a.status === 'active').length;
@@ -870,6 +889,7 @@ function render() {
             <span class="ann-type ${a.type}">${typeLabel(a.type)}</span>
             <span class="ann-date">${fmtDate(a.date)}</span>
             <span class="ann-status ${a.status}">${a.status === 'active' ? 'ATIVO' : 'INATIVO'}</span>
+            ${a.priority ? `<span class="ann-status" style="color:var(--orange);border-color:rgba(255,122,26,.3);background:rgba(255,122,26,.1)">${priorityLabel(a.priority)}</span>` : ''}
           </div>
           <div class="ann-title">${esc(a.title)}</div>
           <div class="ann-body">${esc(a.description)}</div>
@@ -908,6 +928,9 @@ function render() {
 function typeLabel(t) {
   return { news: '📰 NOTÍCIA', update: '🔄 ATUALIZAÇÃO', event: '🎯 EVENTO', promo: '🎁 PROMOÇÃO' }[t] || t;
 }
+function priorityLabel(p) {
+  return { 1: '⭐ ALTA', 2: '🔥 URGENTE' }[p] || '';
+}
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -943,6 +966,7 @@ function openNew() {
   document.getElementById('f-date').value   = today();
   document.getElementById('f-link').value   = '';
   document.getElementById('f-status').value = 'active';
+  document.getElementById('f-priority').value = '0';
   updateCharCount();
   document.getElementById('modal-overlay').classList.remove('hidden');
   document.getElementById('f-title').focus();
@@ -960,6 +984,7 @@ function openEdit(id) {
   document.getElementById('f-date').value   = a.date;
   document.getElementById('f-link').value   = a.link || '';
   document.getElementById('f-status').value = a.status;
+  document.getElementById('f-priority').value = String(a.priority || 0);
   updateCharCount();
   document.getElementById('modal-overlay').classList.remove('hidden');
   document.getElementById('f-title').focus();
@@ -984,6 +1009,7 @@ function saveAnn() {
     date:        document.getElementById('f-date').value || today(),
     link:        document.getElementById('f-link').value.trim() || null,
     status:      document.getElementById('f-status').value,
+    priority:    parseInt(document.getElementById('f-priority').value, 10) || 0,
   };
 
   if (editingId) {
