@@ -28,7 +28,8 @@
       "type": "news",
       "date": "2026-06-28",
       "link": "https://www.dust2.com.br/noticias/75246/falcons-bate-a-furia-e-e-campea-do-iem-cologne-major-2026",
-      "status": "active"
+      "status": "active",
+      "priority": 1
     },
     {
       "id": "mqst00f6n0zqj",
@@ -38,7 +39,8 @@
       "type": "promo",
       "date": "2026-06-25",
       "link": "https://neurabot.com.br",
-      "status": "active"
+      "status": "active",
+      "priority": 2
     }
   ]
 }
