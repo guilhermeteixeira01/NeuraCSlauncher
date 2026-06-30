@@ -110,11 +110,49 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      devTools: false
     }
   });
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+
+  // Bloquear F12 e Ctrl+Shift+I
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    // F12
+    if (input.control === false && input.shift === false && input.alt === false && input.meta === false) {
+      if (input.keyCode === 123) { // F12
+        event.preventDefault();
+        return;
+      }
+    }
+    // Ctrl+Shift+I
+    if ((input.control || input.meta) && input.shift === true && input.keyCode === 73) {
+      event.preventDefault();
+      return;
+    }
+    // Ctrl+Shift+C (inspecionar elemento)
+    if ((input.control || input.meta) && input.shift === true && input.keyCode === 67) {
+      event.preventDefault();
+      return;
+    }
+  });
+
+  // Desabilitar menu de contexto (clique direito)
+  mainWindow.webContents.on('context-menu', (e) => {
+    e.preventDefault();
+  });
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('game-detected', { ...cs16Info, links: launchConfig.getLinks() });
+  });
+
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window-state', { maximized: true });
+  });
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window-state', { maximized: false });
+  });
 
   // Sempre que o conteúdo da janela termina de carregar — incluindo
   // recargas de desenvolvimento via electron-reload, não só o boot inicial —

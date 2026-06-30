@@ -84,14 +84,6 @@
     metaLine.appendChild(badge);
     metaLine.appendChild(dateEl);
 
-    if (ann.priority) {
-      const priorityEl = document.createElement('span');
-      priorityEl.className = 'ann-badge';
-      priorityEl.style.color = '#ff7a1a';
-      priorityEl.textContent = ann.priority >= 2 ? '🔥 URGENTE' : '⭐ ALTA';
-      metaLine.appendChild(priorityEl);
-    }
-
     body.appendChild(metaLine);
 
     // Título

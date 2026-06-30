@@ -1,6 +1,6 @@
 {
   "name": "neuracs-launcher",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Launcher CS",
   "author": "guilherme teixeira",
   "main": "main.js",
