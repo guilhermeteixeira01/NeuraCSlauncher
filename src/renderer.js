@@ -181,12 +181,14 @@ function getLaunchOptionText(source) {
 // resultado chega, ele libera: verde se achou o jogo (qualquer fonte),
 // ou mostra o painel de "nenhuma instalação encontrada" caso contrário.
 window.api.onGameDetected((data) => {
-  btnPlay.disabled = false;
   btnPlay.classList.remove('is-checking');
-  btnPlayArrow.classList.remove('hidden-arrow');
-  btnPlayLabel.textContent = 'JOGAR';
 
   if (data.detected) {
+    btnPlay.disabled = false;
+    btnPlay.classList.remove('no-game');
+    btnPlayArrow.classList.remove('hidden-arrow');
+    btnPlayLabel.textContent = 'JOGAR';
+
     lastDetectedSource = data.source;
     btnPlay.classList.add('steam-ready');
     btnOptions.classList.remove('hidden');
@@ -195,6 +197,14 @@ window.api.onGameDetected((data) => {
 
     launchOptionText.textContent = getLaunchOptionText(data.source);
   } else {
+    // Nenhuma instalação encontrada: trava o botão principal — não tem
+    // como "jogar" sem um executável configurado. O usuário precisa
+    // selecionar manualmente ou baixar o jogo pelos links do painel.
+    btnPlay.disabled = true;
+    btnPlay.classList.add('no-game');
+    btnPlayArrow.classList.add('hidden-arrow');
+    btnPlayLabel.textContent = 'JOGO NÃO ENCONTRADO';
+
     btnPlay.classList.remove('steam-ready');
     btnOptions.classList.add('hidden');
     btnOptions.classList.remove('steam-selected');

@@ -248,7 +248,6 @@ html,body{
   background-position: center;
   display:flex;
   align-items:flex-end;
-  animation: heroimgs 30s infinite;
 }
 .hero::before {
   content: "";
@@ -262,14 +261,6 @@ html,body{
 .hero > * {
   position: relative;
   z-index: 2;
-}
-
-@keyframes heroimgs {
-  0%   { background-image: url('https://4kwallpapers.com/images/wallpapers/counter-strike--9192.png'); }
-  25%  { background-image: url('https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/items/273110/5517e9ce03717bff29b8d5da5bbc6484fc9c8904.jpg'); }
-  50%  { background-image: url('https://wallpaperaccess.com/full/2086790.jpg'); }
-  75%  { background-image: url('https://sm.ign.com/t/ign_ap/articlepage/c/counter-strike-nexon-zombies-free-to-play-hits-ste/counter-strike-nexon-zombies-free-to-play-hits-ste_pamy.1280.jpg'); }
-  100% { background-image: url('https://4kwallpapers.com/images/wallpapers/counter-strike--9192.png'); }
 }
 
 .hero-content{
@@ -404,6 +395,27 @@ html,body{
 @media (prefers-reduced-motion: reduce){
   .btn-play.steam-ready{ animation:none; }
 }
+/* ----- Estado: nenhuma instalação encontrada (botão travado) -----
+   Mesma ideia do .is-checking (cinza, sem brilho), mas com um cadeado
+   no lugar da seta e cursor "not-allowed" pra deixar claro que não dá
+   pra clicar até selecionar/baixar o jogo. */
+.btn-play.no-game{
+  background: #1f2024;
+  color: var(--text-dim);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn-play.no-game:hover{ background:#1f2024; box-shadow:none; }
+.btn-play.no-game:active{ transform:none; }
+
+.btn-play-lock{
+  position:relative; z-index:2;
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+.btn-play.no-game .btn-play-lock{ display:inline-flex; }
+
 .btn-options{
   background:#1a1b1f;
   border:1px solid var(--border);
@@ -473,6 +485,14 @@ html,body{
   border:1px solid var(--border);
   border-radius:8px;
   padding:12px 14px;
+  animation: noGamePulse 2.2s ease-in-out infinite;
+}
+@keyframes noGamePulse{
+  0%, 100%{ border-color: var(--border); box-shadow:none; }
+  50%{ border-color: rgba(255,122,26,.55); box-shadow: 0 0 14px -2px rgba(255,122,26,.25); }
+}
+@media (prefers-reduced-motion: reduce){
+  .no-game-panel{ animation:none; }
 }
 .lom-hint{
   font-size:11.5px;

@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
+<link rel="icon" type="image/png" href="logo.ico"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Neura CS — Painel de Anúncios</title>
 <style>
@@ -616,6 +617,22 @@
     </div>
   </div>
 
+  <!-- HERO CONFIG -->
+<div class="json-section" style="margin-bottom:28px;">
+  <div class="json-header">
+    <span>🖼️ HERO — IMAGENS DO BANNER</span>
+    <button class="btn-copy" id="btn-add-hero">+ Adicionar imagem</button>
+  </div>
+
+  <div id="hero-list" style="padding:16px;"></div>
+
+  <div style="padding:0 16px 16px;">
+    <button class="btn-primary" id="btn-save-hero">
+      💾 Salvar configuração da Hero
+    </button>
+  </div>
+</div>
+
   <!-- TOOLBAR -->
   <div class="toolbar">
     <div class="search-wrap">
@@ -642,13 +659,13 @@
   <div class="ann-list" id="ann-list"></div>
 
   <!-- JSON PREVIEW -->
-  <div class="json-section" id="json-section">
+  <!-- <div class="json-section" id="json-section">
     <div class="json-header">
       <span>📄 announcements.json — prévia</span>
       <button class="btn-copy" id="btn-copy-json">Copiar JSON</button>
     </div>
     <pre id="json-preview"></pre>
-  </div>
+  </div> -->
 
 </div>
 
@@ -795,6 +812,19 @@
 <script>
 // ── STATE ──────────────────────────────────────────────────────────────
 let announcements = JSON.parse(localStorage.getItem('ncs_announcements') || '[]');
+let heroConfig = JSON.parse(
+  localStorage.getItem('ncs_hero') ||
+  JSON.stringify({
+    enabled: true,
+    interval: 7500,
+    images: [
+      "https://4kwallpapers.com/images/wallpapers/counter-strike--9192.png",
+      "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/items/273110/5517e9ce03717bff29b8d5da5bbc6484fc9c8904.jpg",
+      "https://wallpaperaccess.com/full/2086790.jpg",
+      "https://sm.ign.com/t/ign_ap/articlepage/c/counter-strike-nexon-zombies-free-to-play-hits-ste/counter-strike-nexon-zombies-free-to-play-hits-ste_pamy.1280.jpg"
+    ]
+  })
+);
 let editingId = null;
 let ghSha = null; // SHA do arquivo no GitHub (necessário para update)
 
@@ -807,6 +837,110 @@ const ghCfg = () => ({
 });
 
 // ── UTILS ──────────────────────────────────────────────────────────────
+function renderHero() {
+  const container = document.getElementById('hero-list');
+
+  if (!heroConfig.images.length) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:30px;">
+        <p>Nenhuma imagem configurada para a Hero.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = heroConfig.images.map((url, index) => `
+    <div style="
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      gap:12px;
+      align-items:center;
+      margin-bottom:10px;
+      background:var(--panel2);
+      border:1px solid var(--border);
+      padding:10px;
+      border-radius:8px;
+    ">
+
+      <div style="
+        width:80px;
+        height:45px;
+        border-radius:6px;
+        overflow:hidden;
+        background:#0b0c0f;
+      ">
+        ${
+          url
+          ? `<img 
+              src="${esc(url)}"
+              style="width:100%;height:100%;object-fit:cover"
+              onerror="this.style.display='none'"
+            >`
+          : ''
+        }
+      </div>
+
+      <div>
+        <div style="
+          font-size:10px;
+          color:var(--dim);
+          margin-bottom:5px;
+          font-weight:700;
+        ">
+          IMAGEM ${index + 1}
+        </div>
+
+        <input
+          type="text"
+          value="${esc(url)}"
+          placeholder="https://.../imagem.jpg"
+          data-hero-index="${index}"
+        />
+      </div>
+
+      <button
+        class="btn-icon del"
+        onclick="removeHeroImage(${index})"
+        title="Remover"
+      >
+        ✕
+      </button>
+
+    </div>
+  `).join('');
+
+  document.querySelectorAll('[data-hero-index]').forEach(input => {
+    input.addEventListener('input', e => {
+      const index = Number(e.target.dataset.heroIndex);
+      heroConfig.images[index] = e.target.value;
+    });
+  });
+}
+function removeHeroImage(index) {
+  heroConfig.images.splice(index, 1);
+  renderHero();
+}
+document.getElementById('btn-add-hero').addEventListener('click', () => {
+  heroConfig.images.push('');
+  renderHero();
+});
+function saveHero() {
+
+  heroConfig.images = heroConfig.images
+    .map(url => url.trim())
+    .filter(Boolean);
+
+  localStorage.setItem(
+    'ncs_hero',
+    JSON.stringify(heroConfig)
+  );
+
+  toast('Configuração da Hero salva!', 'success');
+
+  renderHero();
+}
+document.getElementById('btn-save-hero').addEventListener('click', saveHero);
+
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
@@ -921,7 +1055,7 @@ function render() {
       </div>`).join('');
   }
 
-  renderJson();
+ /*  renderJson(); */
   updateGhStatus();
 }
 
@@ -936,7 +1070,7 @@ function esc(s) {
 }
 
 // ── JSON PREVIEW ───────────────────────────────────────────────────────
-function renderJson() {
+/* function renderJson() {
   const active = announcements.filter(a => a.status === 'active');
   const json = JSON.stringify({ announcements: active }, null, 2);
 
@@ -953,7 +1087,7 @@ function renderJson() {
     }
   );
   document.getElementById('json-preview').innerHTML = highlighted;
-}
+} */
 
 // ── MODAL: ANÚNCIO ─────────────────────────────────────────────────────
 function openNew() {
@@ -1124,8 +1258,30 @@ async function loadFromGitHub({ silent = false } = {}) {
     const data = await res.json();
     ghSha = data.sha || null;
 
-    const parsed = JSON.parse(decodeGhContent(data.content || ''));
-    announcements = Array.isArray(parsed.announcements) ? parsed.announcements : [];
+    const parsed = JSON.parse(
+  decodeGhContent(data.content || '')
+);
+
+announcements = Array.isArray(parsed.announcements)
+  ? parsed.announcements
+  : [];
+
+if (parsed.hero) {
+  heroConfig = {
+    enabled: parsed.hero.enabled !== false,
+    interval: Number(parsed.hero.interval) || 7500,
+    images: Array.isArray(parsed.hero.images)
+      ? parsed.hero.images
+      : []
+  };
+
+  localStorage.setItem(
+    'ncs_hero',
+    JSON.stringify(heroConfig)
+  );
+}
+
+renderHero();
 
     localStorage.setItem('ncs_announcements', JSON.stringify(announcements));
     render();
@@ -1154,7 +1310,10 @@ async function saveToGitHub() {
   // Envia TODOS os anúncios (ativos e inativos) — assim editar de outro
   // navegador/PC depois (via "Recarregar do GitHub") não perde os
   // inativos. O launcher já filtra por status "active" sozinho.
-  const content = JSON.stringify({ announcements }, null, 2);
+  const content = JSON.stringify({
+  hero: heroConfig,
+  announcements
+}, null, 2);
   const encoded = btoa(unescape(encodeURIComponent(content)));
 
   const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${c.path}`;
@@ -1235,6 +1394,7 @@ document.addEventListener('keydown', e => {
 
 // ── INIT ───────────────────────────────────────────────────────────────
 render();
+renderHero();
 loadFromGitHub({ silent: true });
 </script>
 </body>
