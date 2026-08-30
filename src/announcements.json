@@ -8,7 +8,7 @@
       "type": "news",
       "date": "2026-06-28",
       "link": "https://draft5.gg/noticia/veja-os-proximos-compromissos-das-equipes-brasileiras-no-exterior",
-      "status": "active"
+      "status": "inactive"
     },
     {
       "id": "mqxvoeiwno2zc",
@@ -18,7 +18,7 @@
       "type": "news",
       "date": "2026-06-28",
       "link": "https://draft5.gg/noticia/os-melhores-kits-de-faca-e-luva-no-cs2-por-menos-de-r1-mil",
-      "status": "active"
+      "status": "inactive"
     },
     {
       "id": "mqxvl55l4i09w",
@@ -28,7 +28,7 @@
       "type": "news",
       "date": "2026-06-28",
       "link": "https://www.dust2.com.br/noticias/75246/falcons-bate-a-furia-e-e-campea-do-iem-cologne-major-2026",
-      "status": "active",
+      "status": "inactive",
       "priority": 1
     },
     {
