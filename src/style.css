@@ -145,12 +145,12 @@ html,body{
 .btn-update-install:hover{ filter:brightness(1.08); }
 
 /* ===== App grid ===== */
-.app{
-  display:grid;
-  grid-template-columns: 200px 1fr 280px;
-  flex:1;
-  min-height:0;
-  overflow:hidden;
+.app {
+  display: grid;
+  grid-template-columns: 20vw minmax(0, 1fr) 20vw;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* ===== Sidebar ===== */
@@ -647,7 +647,11 @@ html,body{
 .avatar{
   width:48px; height:48px;
   border-radius:50%;
-  background: radial-gradient(circle at 35% 30%, #3a3b40, #15161a);
+  background-image: url('https://avatars.akamai.steamstatic.com/ba8a2c3956a0308ed43d2e4d68c6d1121e8e0c00_full.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* background: radial-gradient(circle at 35% 30%, #3a3b40, #15161a); */
   border:2px solid var(--orange);
 }
 .profile-name{ font-size:14px; font-weight:700; }
