@@ -12,6 +12,8 @@
     --text-dim: #9a9ba3;
     --orange: #ff7a1a;
     --orange-2: #ff9a3c;
+    --blue: #1a73e8;
+    --blue-2: #3498db;
   }
 
   *{ box-sizing:border-box; margin:0; padding:0; }
@@ -64,7 +66,7 @@
     position:absolute;
     width:340px; height:340px;
     border-radius:50%;
-    background: radial-gradient(circle, rgba(255,122,26,.18), transparent 70%);
+    background: radial-gradient(circle, rgba(26, 247, 255, 0.18), transparent 70%);
     filter: blur(4px);
     animation: pulseGlow 2.6s ease-in-out infinite;
     pointer-events:none;
@@ -104,7 +106,7 @@
   }
   .brand-name .accent{
     color:transparent;
-    -webkit-text-stroke: 1.4px var(--orange);
+    -webkit-text-stroke: 1.4px var(--blue);
   }
 
   .status{
@@ -133,7 +135,7 @@
     height:100%;
     width:100%;
     border-radius:3px;
-    background:linear-gradient(90deg,var(--orange),var(--orange-2));
+    background:linear-gradient(90deg,var(--blue),var(--blue-2));
     transform:scaleX(0);
     transform-origin:left center;
 
@@ -143,7 +145,7 @@
 }
 
   .progress-fill.complete{
-    box-shadow: 0 0 12px rgba(255, 122, 26, 0.45);
+    box-shadow: 0 0 12px rgba(26, 115, 232, 0.45);
   }
 
   .version-tag{
@@ -167,7 +169,7 @@
     <div class="glow"></div>
 
     <div class="logo-wrap">
-      <img src="logo.png" class="logo" alt="Neura" />
+      <img src="logoNP.png" class="logo" alt="Neura" />
       <div class="brand-name">NEURA<span class="accent"> CS</span> LAUNCHER</div>
 
       <div class="progress-track">

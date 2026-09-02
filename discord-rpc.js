@@ -68,7 +68,7 @@ function setMenuActivity() {
   if (!ready) return;
   client.user?.setActivity({
     details: 'No menu principal',
-    state: 'Neura CS Launcher',
+    state: '',
     startTimestamp,
     largeImageKey: 'logo',
     largeImageText: 'No menu',

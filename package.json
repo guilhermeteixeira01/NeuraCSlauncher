@@ -1,6 +1,6 @@
 {
   "name": "neuracs-launcher",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Launcher CS",
   "author": "guilherme teixeira",
   "main": "main.js",
@@ -42,15 +42,15 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "src/logo.png"
+      "icon": "src/logoNP.png"
     },
     "mac": {
       "target": "dmg",
-      "icon": "src/logo.png"
+      "icon": "src/logoNP.png"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "src/logo.png"
+      "icon": "src/logoNP.png"
     },
     "publish": {
       "provider": "github",

@@ -106,7 +106,7 @@ function createWindow() {
     backgroundColor: '#00000000',
     hasShadow: true,
     show: false, // fica escondida até a splash terminar (ver showMainWindowFromSplash)
-    icon: path.join(__dirname, 'src', `logo.${iconExt}`),
+    icon: path.join(__dirname, 'src', `logoNP.${iconExt}`),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -183,7 +183,7 @@ function createWindow() {
 function createTray() {
   if (tray) return;
 
-  const iconPath = path.join(__dirname, 'src', 'logo.png');
+  const iconPath = path.join(__dirname, 'src', 'logoNP.png');
   let trayIcon = nativeImage.createFromPath(iconPath);
   if (!trayIcon.isEmpty()) {
     trayIcon = trayIcon.resize({ width: 16, height: 16 });
@@ -236,7 +236,7 @@ function createSplashWindow() {
     hasShadow: true,
     show: false,
     skipTaskbar: true,
-    icon: path.join(__dirname, 'src', 'logo.png'),
+    icon: path.join(__dirname, 'src', 'logoNP.png'),
     webPreferences: {
       preload: path.join(__dirname, 'splash-preload.js'),
       contextIsolation: true,
@@ -417,6 +417,12 @@ async function runBootSequence() {
 app.whenReady().then(async () => {
   console.log('[Boot] app ready — criando splash...');
   createSplashWindow();
+
+  // MODO DE EDIÇÃO DO SPLASH
+  if (process.env.EDIT_SPLASH === 'true') {
+    console.log('[Splash] Modo de edição ativo.');
+    return;
+  }
 
   const failsafeTimer = setTimeout(() => {
     if (!mainWindowReady) {
