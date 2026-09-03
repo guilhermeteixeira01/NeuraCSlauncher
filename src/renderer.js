@@ -71,6 +71,45 @@ if (verTodasNoticias) {
   });
 }
 
+// ===== i18n: re-renderiza textos dinâmicos quando o idioma muda =====
+// Elementos estáticos (data-i18n) se traduzem sozinhos; os textos abaixo
+// são montados via JS a partir do estado do app, então precisam ser
+// remontados manualmente sempre que o usuário troca de idioma no meio do uso.
+let currentPlayState = 'checking'; // 'checking' | 'notfound' | 'ready' | 'running'
+let lastUpdateEvent = null; // guarda o último evento de update pra re-renderizar a barra
+
+document.addEventListener('i18n:changed', () => {
+  refreshDynamicTexts();
+});
+
+function refreshDynamicTexts() {
+  const t = window.i18n.t;
+
+  // Botão JOGAR + opção de execução
+  if (currentPlayState === 'checking') {
+    btnPlayLabel.textContent = t('play.checking');
+    launchOptionText.textContent = t('launch.checking');
+  } else if (currentPlayState === 'notfound') {
+    btnPlayLabel.textContent = t('play.notfound');
+  } else if (currentPlayState === 'running') {
+    btnPlayLabel.textContent = t('play.playing');
+    launchOptionText.textContent = t('launch.running');
+  } else if (currentPlayState === 'ready') {
+    btnPlayLabel.textContent = t('play.play');
+    launchOptionText.textContent = getLaunchOptionText(lastDetectedSource);
+  }
+
+  // Painel de "jogo não encontrado" (links de download)
+  if (lomLinkSecondary.dataset.url) {
+    lomLinkSecondary.textContent = t('nogame.secondary');
+  }
+
+  // Barra de atualização, se estiver visível no momento da troca de idioma
+  if (lastUpdateEvent && !updateBar.classList.contains('hidden')) {
+    renderUpdateStatus(lastUpdateEvent);
+  }
+}
+
 // ===== Play button =====
 const overlay = document.getElementById('launch-overlay');
 const launchText = document.getElementById('launch-text');
@@ -95,15 +134,15 @@ const lomLinkSecondary = document.getElementById('lom-link-secondary');
 btnPlay.addEventListener('click', () => {
   if (btnPlay.disabled) return; // ainda verificando a instalação
   overlay.classList.remove('hidden');
-  launchText.textContent = 'Iniciando o jogo...';
+  launchText.textContent = window.i18n.t('launching.starting');
   window.api.launchGame();
 });
 
 window.api.onLaunchStatus((data) => {
   if (data.status === 'launching') {
-    launchText.textContent = 'Iniciando o jogo...';
+    launchText.textContent = window.i18n.t('launching.starting');
   } else if (data.status === 'launched') {
-    launchText.textContent = 'Jogo iniciado!';
+    launchText.textContent = window.i18n.t('launching.started');
     setTimeout(() => overlay.classList.add('hidden'), 1200);
   }
 });
@@ -171,9 +210,9 @@ let lastDetectedSource = null;
 // repack em "C:\Jogos\...") não têm relação com a Steam, então não podem
 // dar a entender que vieram dela.
 function getLaunchOptionText(source) {
-  if (source === 'manual') return 'EXECUTÁVEL CONFIGURADO MANUALMENTE';
-  if (source === 'auto-scan') return 'NOSTEAM - COUNTER-STRIKE 1.6 DETECTADO';
-  return 'STEAM — COUNTER-STRIKE 1.6 DETECTADO'; // source === 'steam'
+  if (source === 'manual') return window.i18n.t('launch.manual');
+  if (source === 'auto-scan') return window.i18n.t('launch.autoscan');
+  return window.i18n.t('launch.steam'); // source === 'steam'
 }
 
 // Enquanto a checagem roda (lá no main process), o botão fica em estado
@@ -184,10 +223,11 @@ window.api.onGameDetected((data) => {
   btnPlay.classList.remove('is-checking');
 
   if (data.detected) {
+    currentPlayState = 'ready';
     btnPlay.disabled = false;
     btnPlay.classList.remove('no-game');
     btnPlayArrow.classList.remove('hidden-arrow');
-    btnPlayLabel.textContent = 'JOGAR';
+    btnPlayLabel.textContent = window.i18n.t('play.play');
 
     lastDetectedSource = data.source;
     btnPlay.classList.add('steam-ready');
@@ -200,10 +240,11 @@ window.api.onGameDetected((data) => {
     // Nenhuma instalação encontrada: trava o botão principal — não tem
     // como "jogar" sem um executável configurado. O usuário precisa
     // selecionar manualmente ou baixar o jogo pelos links do painel.
+    currentPlayState = 'notfound';
     btnPlay.disabled = true;
     btnPlay.classList.add('no-game');
     btnPlayArrow.classList.add('hidden-arrow');
-    btnPlayLabel.textContent = 'JOGO NÃO ENCONTRADO';
+    btnPlayLabel.textContent = window.i18n.t('play.notfound');
 
     btnPlay.classList.remove('steam-ready');
     btnOptions.classList.add('hidden');
@@ -220,7 +261,7 @@ window.api.onGameDetected((data) => {
     }
     if (links.secondary) {
       lomLinkSecondary.dataset.url = links.secondary;
-      lomLinkSecondary.textContent = 'Baixar Versão Gratis ↗';
+      lomLinkSecondary.textContent = window.i18n.t('nogame.secondary');
       lomLinkSecondary.classList.remove('hidden');
     } else {
       lomLinkSecondary.classList.add('hidden');
@@ -234,18 +275,20 @@ window.api.onGameDetected((data) => {
 // pro estado normal (verde, já que sabemos que o jogo está instalado).
 window.api.onGameStatus((data) => {
   if (data.status === 'running') {
+    currentPlayState = 'running';
     btnPlay.disabled = true;
     btnPlay.classList.remove('steam-ready');
     btnPlay.classList.add('in-game');
     btnPlayArrow.classList.add('hidden-arrow');
-    btnPlayLabel.textContent = 'JOGANDO';
-    launchOptionText.textContent = 'JOGO EM EXECUÇÃO';
+    btnPlayLabel.textContent = window.i18n.t('play.playing');
+    launchOptionText.textContent = window.i18n.t('launch.running');
   } else if (data.status === 'closed') {
+    currentPlayState = 'ready';
     btnPlay.disabled = false;
     btnPlay.classList.remove('in-game');
     btnPlay.classList.add('steam-ready');
     btnPlayArrow.classList.remove('hidden-arrow');
-    btnPlayLabel.textContent = 'JOGAR';
+    btnPlayLabel.textContent = window.i18n.t('play.play');
     launchOptionText.textContent = getLaunchOptionText(lastDetectedSource);
   }
 });
@@ -261,7 +304,8 @@ btnUpdateInstall.addEventListener('click', () => {
   window.api.installUpdate();
 });
 
-window.api.onUpdateStatus((data) => {
+function renderUpdateStatus(data) {
+  const t = window.i18n.t;
   switch (data.status) {
     case 'checking':
       // Fica em silêncio — não precisa incomodar o usuário só de checar
@@ -269,20 +313,20 @@ window.api.onUpdateStatus((data) => {
 
     case 'available':
       updateBar.classList.remove('hidden');
-      updateText.textContent = `Nova versão ${data.version} encontrada, baixando...`;
+      updateText.textContent = t('update.available', { versao: data.version });
       updateProgressWrap.classList.remove('hidden');
       break;
 
     case 'downloading':
       updateBar.classList.remove('hidden');
-      updateText.textContent = `Baixando atualização... ${data.percent}%`;
+      updateText.textContent = t('update.downloading', { percent: data.percent });
       updateProgressWrap.classList.remove('hidden');
       updateProgress.style.width = data.percent + '%';
       break;
 
     case 'downloaded':
       updateBar.classList.remove('hidden');
-      updateText.textContent = `Atualização ${data.version} baixada e pronta para instalar.`;
+      updateText.textContent = t('update.downloaded', { versao: data.version });
       updateProgressWrap.classList.add('hidden');
       btnUpdateInstall.classList.remove('hidden');
       break;
@@ -293,9 +337,14 @@ window.api.onUpdateStatus((data) => {
 
     case 'error':
       updateBar.classList.remove('hidden');
-      updateText.textContent = 'Não foi possível verificar atualizações.';
+      updateText.textContent = t('update.error');
       updateProgressWrap.classList.add('hidden');
       console.error('[AutoUpdate]', data.message);
       break;
   }
+}
+
+window.api.onUpdateStatus((data) => {
+  lastUpdateEvent = data;
+  renderUpdateStatus(data);
 });

@@ -38,7 +38,7 @@ html,body{
   background:
     linear-gradient(160deg,#0f1014 0%,#0b0c0f 40%,#0d0e12 100%) !important;
   border:1px solid #2a2b30;
-  border-radius:12px;
+  /* border-radius:12px; */
   overflow:hidden;
 }
 .window-frame.maximized{
@@ -67,25 +67,90 @@ html,body{
 .lom-item,
 .no-game-panel,
 .main,
-.right-panel{
+.right-panel,
+.language-control,
+.language-menu,
+.copyright{
   -webkit-app-region: no-drag;
 }
 
-/* ===== Botões da janela flutuando (sem barra de título) ===== */
-.window-controls--floating{
-  position:absolute;
-  top:12px;
-  right:14px;
+.bar{
+  position:relative;
+  background: rgba(0, 0, 0, 0.25);
+  display:flex;
+  flex-direction:row;
+  justify-content:space-between;
+}
+
+.language-control {
+  position: relative;
+  z-index: 100;
+}
+.language-control button {
+  background: transparent;
+  border: none;
+  color: snow;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+
+.language-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 10px;
+  width: 150px;
+  padding: 6px;
+  background: #121317;
+  border: 1px solid #252629;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  z-index: 1000;
+}
+
+.language-menu.hidden {
+  display: none;
+}
+
+.language-menu button {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  background: transparent;
+  color: #f1f1f1;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+
+  & img {
+    width: 30px;
+  }
+}
+
+.language-menu button:hover {
+  background: #1c1e23;
+  color: var(--orange);
+}
+
+.language-menu button.lang-active {
+  color: var(--orange);
+  font-weight: 700;
+}
+
+.window-controls{
+  position:relative;
+  right:10px;
   z-index:40;
   display:flex;
   gap:2px;
-  border:1px solid #2a2b30;
-  border-radius: 10px;
   backdrop-filter: blur(6px);
-  background: rgba(0, 0, 0, 0.25);
 }
 .win-btn{
-  width:40px; height:28px;
+  width:30px; height:28px;
   background:transparent;
   border: none;
   color:snow;
@@ -93,8 +158,7 @@ html,body{
   cursor:pointer;
 }
 .win-btn:hover{ background:#26272d; color:var(--text); }
-.win-btn--min:hover { border-radius: 5px 0 0 5px; }
-.win-btn--close:hover{ background:#e0413f; color:#fff; border-radius: 0 5px 5px 0;}
+.win-btn--close:hover{ background:#e0413f; color:#fff; }
 
 /* ===== Update bar (card flutuante, canto inferior direito) ===== */
 .update-bar{
@@ -107,12 +171,12 @@ html,body{
   flex-direction: column;
   align-items: stretch;
   gap:10px;
-  background: linear-gradient(135deg, #1a1304, #14150a);
-  border: 1px solid #3a2c0a;
+  background: linear-gradient(135deg, #041a1a, #0a1315);
+  border: 1px solid #0a383a;
   border-radius: 12px;
   padding: 16px 18px;
   font-size:12px;
-  color:#f0d9a8;
+  color:#a8f0f0;
   box-shadow: 0 14px 32px -8px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
   z-index: 9999;
 }
@@ -120,7 +184,7 @@ html,body{
 .update-progress-wrap{
   width:100%;
   height:5px;
-  background:#2a2410;
+  background:#10292a;
   border-radius:3px;
   overflow:hidden;
 }
@@ -135,7 +199,7 @@ html,body{
   align-self: flex-end;
   background: linear-gradient(90deg, var(--blue), var(--blue-2));
   border:none;
-  color:#1a0f00;
+  color:#00181a;
   font-weight:800;
   font-size:11px;
   letter-spacing:0.5px;
@@ -548,6 +612,7 @@ html,body{
   cursor:pointer;
   position:relative;
   transition: transform .15s, border-color .15s, box-shadow .15s;
+  max-width: 250px;
 }
 /* .news-card::before{
   content:'';
