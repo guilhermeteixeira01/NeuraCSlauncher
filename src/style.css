@@ -84,7 +84,6 @@ html,body{
 
 .language-control {
   position: relative;
-  z-index: 100;
 }
 .language-control button {
   background: transparent;
@@ -143,8 +142,6 @@ html,body{
 
 .window-controls{
   position:relative;
-  right:10px;
-  z-index:40;
   display:flex;
   gap:2px;
   backdrop-filter: blur(6px);

@@ -26,19 +26,29 @@ let waitedMs = 0;
 
 function isProcessRunning(processName) {
   return new Promise((resolve) => {
-    if (!processName) return resolve(false);
+    if (!processName) return resolve({ running: false, pid: null });
 
     if (process.platform === 'win32') {
-      exec(`tasklist /FI "IMAGENAME eq ${processName}" /NH`, (err, stdout) => {
+      // /FO CSV pra conseguir extrair o PID (2ª coluna) de forma confiável,
+      // em vez de tentar parsear a saída de texto alinhado por espaços.
+      exec(`tasklist /FI "IMAGENAME eq ${processName}" /FO CSV /NH`, (err, stdout) => {
         if (err) {
           console.warn('[GameWatcher] tasklist falhou:', err.message);
-          return resolve(false);
+          return resolve({ running: false, pid: null });
         }
-        resolve(stdout.toLowerCase().includes(processName.toLowerCase()));
+        const line = stdout.split('\n').find(l => l.toLowerCase().includes(processName.toLowerCase()));
+        if (!line) return resolve({ running: false, pid: null });
+
+        // Linha típica: "hl.exe","1234","Console","1","50,000 K"
+        const columns = line.split('","').map(c => c.replace(/"/g, '').trim());
+        const pid = columns[1] ? parseInt(columns[1], 10) : null;
+        resolve({ running: true, pid: Number.isFinite(pid) ? pid : null });
       });
     } else {
       exec(`pgrep -x ${processName}`, (err, stdout) => {
-        resolve(!err && stdout.trim().length > 0);
+        if (err || !stdout.trim()) return resolve({ running: false, pid: null });
+        const pid = parseInt(stdout.trim().split('\n')[0], 10);
+        resolve({ running: true, pid: Number.isFinite(pid) ? pid : null });
       });
     }
   });
@@ -46,7 +56,7 @@ function isProcessRunning(processName) {
 
 /**
  * @param {string} processName ex.: "hl.exe" no Windows, "hl" no Linux/Mac
- * @param {{ onRunning: () => void, onClosed: () => void }} callbacks
+ * @param {{ onRunning: (pid: number|null) => void, onClosed: () => void }} callbacks
  */
 function start(processName, { onRunning, onClosed }) {
   stop(); // garante que não fica mais de um watcher ativo ao mesmo tempo
@@ -57,13 +67,13 @@ function start(processName, { onRunning, onClosed }) {
   waitedMs = 0;
 
   pollHandle = setInterval(async () => {
-    const running = await isProcessRunning(processName);
+    const { running, pid } = await isProcessRunning(processName);
 
     if (running && !isRunning) {
-      console.log(`[GameWatcher] "${processName}" detectado rodando.`);
+      console.log(`[GameWatcher] "${processName}" detectado rodando (PID ${pid}).`);
       isRunning = true;
       waitedMs = 0;
-      onRunning();
+      onRunning(pid);
     } else if (!running && isRunning) {
       console.log(`[GameWatcher] "${processName}" não está mais rodando — jogo fechado.`);
       isRunning = false;

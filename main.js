@@ -5,6 +5,7 @@ const discordRPC = require('./discord-rpc');
 const autoUpdate = require('./auto-update');
 const steamDetect = require('./steam-detect');
 const gameWatcher = require('./game-watcher');
+const serverWatcher = require('./server-watcher');
 const launchConfig = require('./launch-config');
 
 // Guarda o resultado da detecção do CS 1.6 pra usar depois, no clique de "JOGAR".
@@ -448,6 +449,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   gameWatcher.stop();
+  serverWatcher.stop();
   if (tray) {
     tray.destroy();
     tray = null;
@@ -494,7 +496,10 @@ ipcMain.on('launch-game', (event) => {
     console.log('Lançando executável configurado manualmente:', cs16Info.exePath);
     const { spawn } = require('child_process');
     try {
-      const child = spawn(cs16Info.exePath, [], {
+      // -condebug grava a saída do console em cstrike/qconsole.log,
+      // -conclearlog limpa esse log a cada novo lançamento — é assim que
+      // o server-watcher.js descobre a qual servidor o jogador conectou.
+      const child = spawn(cs16Info.exePath, ['-condebug', '-conclearlog'], {
         cwd: path.dirname(cs16Info.exePath),
         detached: true,
         stdio: 'ignore'
@@ -512,6 +517,11 @@ ipcMain.on('launch-game', (event) => {
     }, 1500);
   } else if (cs16Info.detected) {
     console.log('Lançando Counter-Strike 1.6 via Steam...');
+    console.log(
+      '[ServerWatcher] Dica: pra ver dados reais do servidor no Discord (mapa, jogadores), ' +
+      'adicione "-condebug -conclearlog" nas Opções de Inicialização do jogo na Steam ' +
+      '(botão direito no jogo > Propriedades). Sem isso, o status fica no genérico "Em partida".'
+    );
     shell.openExternal(`steam://rungameid/${steamDetect.CS16_APPID}`).catch((err) => {
       console.error('[SteamDetect] Erro ao abrir via Steam:', err);
     });
@@ -547,10 +557,30 @@ function startWatchingGameProcess(processName) {
     onRunning: () => {
       console.log('[GameWatcher] Counter-Strike 1.6 está rodando.');
       sendToRenderer('game-status', { status: 'running' });
-      discordRPC.setPlayingActivity();
+      discordRPC.setPlayingActivity(); // status genérico até descobrirmos o servidor
+
+      // Assim que o processo do jogo é detectado, começa a ler o log de
+      // console (qconsole.log) pra descobrir a qual servidor ele se
+      // conectou e consultar os dados reais (nome, mapa, jogadores).
+      const installPath = cs16Info.installPath || (cs16Info.exePath ? path.dirname(cs16Info.exePath) : null);
+      serverWatcher.start(installPath, {
+        onServerInfo: (info) => {
+          sendToRenderer('server-status', { connected: true, ...info });
+          discordRPC.setServerActivity(info);
+        },
+        onNoServer: () => {
+          sendToRenderer('server-status', { connected: false });
+          // Diferencia "acabou de abrir o jogo" (setPlayingActivity, chamado
+          // em onRunning) de "estava num servidor e caiu" — usa o status
+          // dedicado, que também limpa a imagem do mapa antigo.
+          discordRPC.setDisconnectedActivity();
+        }
+      });
     },
     onClosed: () => {
       console.log('[GameWatcher] Counter-Strike 1.6 foi fechado.');
+      serverWatcher.stop();
+      sendToRenderer('server-status', { connected: false });
       sendToRenderer('game-status', { status: 'closed' });
       updateDiscordToIdle();
       showMainWindow(); // traz o launcher de volta pra frente
