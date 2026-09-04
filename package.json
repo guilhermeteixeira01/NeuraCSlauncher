@@ -36,6 +36,7 @@
       "auto-update.js",
       "steam-detect.js",
       "game-watcher.js",
+      "server-watcher.js",
       "launch-config.js",
       "src/**/*",
       "node_modules/**/*"
