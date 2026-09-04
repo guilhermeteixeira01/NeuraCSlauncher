@@ -31,6 +31,7 @@
       'title.fechar': 'Fechar',
 
       'nav.inicio': 'INÍCIO',
+      'nav.atualizacoes': 'ATUALIZAÇÕES',
       'nav.noticias': 'NOTÍCIAS',
       'nav.servidores': 'SERVIDORES',
       'nav.loja': 'LOJA',
@@ -56,6 +57,7 @@
 
       'news.latest': 'ÚLTIMAS NOTÍCIAS',
       'news.viewall': 'VER TODAS →',
+      'updates.title': 'ATUALIZAÇÕES',
       'news.title': 'NOTÍCIAS',
       'servers.title': 'SERVIDORES',
       'store.title': 'LOJA',
@@ -102,6 +104,12 @@
       'launching.started': 'Jogo iniciado!',
 
       'copyright.by': 'Por',
+      'login.username': 'USUÁRIO',
+      'login.password': 'SENHA',
+      'login.forgotpassword': 'Esqueci minha senha',
+      'login.submit': 'ENTRAR NA CONTA',
+      'login.or': 'OU',
+      'login.register': 'CRIAR NOVA CONTA',
     },
 
     en: {
@@ -111,6 +119,7 @@
       'title.fechar': 'Close',
 
       'nav.inicio': 'HOME',
+      'nav.atualizacoes': 'UPDATES',
       'nav.noticias': 'NEWS',
       'nav.servidores': 'SERVERS',
       'nav.loja': 'STORE',
@@ -136,6 +145,7 @@
 
       'news.latest': 'LATEST NEWS',
       'news.viewall': 'VIEW ALL →',
+      'updates.title': 'UPDATES',
       'news.title': 'NEWS',
       'servers.title': 'SERVERS',
       'store.title': 'STORE',
@@ -182,6 +192,12 @@
       'launching.started': 'Game started!',
 
       'copyright.by': 'By',
+      'login.username': 'USERNAME',
+      'login.password': 'PASSWORD',
+      'login.forgotpassword': 'Forgot my password',
+      'login.submit': 'LOGIN TO ACCOUNT',
+      'login.or': 'OR',
+      'login.register': 'CREATE NEW ACCOUNT',
     },
 
     es: {
@@ -191,6 +207,7 @@
       'title.fechar': 'Cerrar',
 
       'nav.inicio': 'INICIO',
+      'nav.atualizacoes': 'ACTUALIZACIONES',
       'nav.noticias': 'NOTICIAS',
       'nav.servidores': 'SERVIDORES',
       'nav.loja': 'TIENDA',
@@ -216,6 +233,7 @@
 
       'news.latest': 'ÚLTIMAS NOTICIAS',
       'news.viewall': 'VER TODAS →',
+      'updates.title': 'ACTUALIZACIONES',
       'news.title': 'NOTICIAS',
       'servers.title': 'SERVIDORES',
       'store.title': 'TIENDA',
@@ -262,6 +280,12 @@
       'launching.started': '¡Juego iniciado!',
 
       'copyright.by': 'Por',
+      'login.username': 'USUARIO',
+      'login.password': 'CONTRASEÑA',
+      'login.forgotpassword': 'Olvidé mi contraseña',
+      'login.submit': 'INICIAR SESIÓN',
+      'login.or': 'O',
+      'login.register': 'CREAR NUEVA CUENTA',
     },
   };
 

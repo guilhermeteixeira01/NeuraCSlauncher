@@ -485,28 +485,38 @@ ipcMain.on('update-install', () => {
   autoUpdate.quitAndInstall();
 });
 
-// "Play": o comportamento muda de acordo com a fonte detectada em cs16Info.source:
-// - 'steam'  -> abre via protocolo steam://rungameid/10 (a própria Steam cuida do processo)
-// - 'manual' -> roda direto o executável que o usuário escolheu nas opções
-// - nenhum   -> mantém a simulação (ex.: pra outros jogos/mods futuros)
+// "Play": lança o executável direto sempre que a gente já sabe o caminho
+// dele (cs16Info.exePath) — não importa se foi a Steam, um caminho
+// manual ou a varredura automática que achou. É assim que garantimos
+// "-condebug -conclearlog" em TODO lançamento, sem depender do usuário
+// configurar isso manualmente nas Opções de Inicialização da Steam.
+// O jogo continua se autenticando com a Steam normalmente nesse modo
+// (via steam_appid.txt na pasta do jogo, com o cliente da Steam aberto),
+// então overlay e status de "jogando" pros amigos seguem funcionando.
+// Só cai pro protocolo steam://rungameid no caso raro de não termos o
+// caminho do exe resolvido — nesse caso não tem como garantir os
+// argumentos, e o usuário precisa configurá-los manualmente na Steam.
 ipcMain.on('launch-game', (event) => {
   event.reply('launch-status', { status: 'launching' });
 
-  if (cs16Info.detected && cs16Info.source === 'manual') {
-    console.log('Lançando executável configurado manualmente:', cs16Info.exePath);
+  if (cs16Info.detected && cs16Info.exePath) {
+    console.log(`Lançando executável (${cs16Info.source}):`, cs16Info.exePath);
     const { spawn } = require('child_process');
     try {
-      // -condebug grava a saída do console em cstrike/qconsole.log,
-      // -conclearlog limpa esse log a cada novo lançamento — é assim que
-      // o server-watcher.js descobre a qual servidor o jogador conectou.
-      const child = spawn(cs16Info.exePath, ['-condebug', '-conclearlog'], {
+      // -game cstrike diz pra engine (hl.exe é só o executável base do
+      // GoldSrc) carregar o mod do Counter-Strike — sem isso ele abre o
+      // Half-Life puro. -condebug grava a saída do console em
+      // cstrike/qconsole.log, -conclearlog limpa esse log a cada novo
+      // lançamento — é assim que o server-watcher.js descobre a qual
+      // servidor o jogador conectou.
+      const child = spawn(cs16Info.exePath, ['-game', 'cstrike', '-condebug', '-conclearlog'], {
         cwd: path.dirname(cs16Info.exePath),
         detached: true,
         stdio: 'ignore'
       });
       child.unref();
     } catch (err) {
-      console.error('[Launch] Erro ao iniciar executável manual:', err);
+      console.error('[Launch] Erro ao iniciar executável:', err);
     }
 
     startWatchingGameProcess(path.basename(cs16Info.exePath));
@@ -516,7 +526,7 @@ ipcMain.on('launch-game', (event) => {
       minimizeToBackground();
     }, 1500);
   } else if (cs16Info.detected) {
-    console.log('Lançando Counter-Strike 1.6 via Steam...');
+    console.log('Lançando Counter-Strike 1.6 via Steam (caminho do executável não resolvido)...');
     console.log(
       '[ServerWatcher] Dica: pra ver dados reais do servidor no Discord (mapa, jogadores), ' +
       'adicione "-condebug -conclearlog" nas Opções de Inicialização do jogo na Steam ' +
@@ -529,9 +539,7 @@ ipcMain.on('launch-game', (event) => {
     // Em vez de confiar só num timer, fica de fato observando o processo
     // do jogo no sistema — assim a gente sabe quando ele abre de verdade
     // (e quando fecha, pra voltar tudo ao normal).
-    const processName = cs16Info.exePath
-      ? path.basename(cs16Info.exePath)
-      : (process.platform === 'win32' ? 'hl.exe' : 'hl');
+    const processName = process.platform === 'win32' ? 'hl.exe' : 'hl';
 
     startWatchingGameProcess(processName);
 

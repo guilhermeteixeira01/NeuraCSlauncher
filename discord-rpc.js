@@ -236,11 +236,11 @@ function setDisconnectedActivity() {
   if (!ready) return;
 
   client.user?.setActivity({
-    details: 'Em partida',
-    state: 'Desconectado do servidor',
+    details: 'No CS',
+    state: 'Menu',
     startTimestamp,
     largeImageKey: FALLBACK_LARGE_IMAGE_KEY,
-    largeImageText: 'Jogando',
+    largeImageText: '',
     smallImageKey: 'null',
     smallImageText: '',
     instance: false,
